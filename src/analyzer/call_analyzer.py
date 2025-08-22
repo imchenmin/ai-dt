@@ -16,6 +16,7 @@ class CallAnalyzer:
     def find_call_sites(self, function_name: str, compilation_units: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Find all call sites for a given function across the project"""
         call_sites = []
+        seen_call_sites = set()
         
         for unit in compilation_units:
             file_path = unit['file']
@@ -23,7 +24,12 @@ class CallAnalyzer:
             
             if self._is_source_file(file_path):
                 calls = self._find_calls_in_file(function_name, file_path, compile_args)
-                call_sites.extend(calls)
+                for call in calls:
+                    # Create unique identifier for call site to avoid duplicates
+                    call_id = f"{call['file']}:{call['line']}"
+                    if call_id not in seen_call_sites:
+                        seen_call_sites.add(call_id)
+                        call_sites.append(call)
         
         return call_sites
     

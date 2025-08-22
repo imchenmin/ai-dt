@@ -72,14 +72,25 @@ class ClangAnalyzer:
     
     def _extract_functions(self, cursor, functions: List[Dict[str, Any]], file_path: str):
         """Recursively extract function information from AST"""
-        if cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL:
-            function_info = self._get_function_info(cursor, file_path)
-            if function_info:
-                functions.append(function_info)
+        seen_functions = set()
         
-        # Recursively process child nodes
-        for child in cursor.get_children():
-            self._extract_functions(child, functions, file_path)
+        def _extract_recursive(cursor):
+            if cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL:
+                # Skip function declarations that are not definitions
+                if cursor.is_definition():
+                    function_info = self._get_function_info(cursor, file_path)
+                    if function_info:
+                        # Use function name and file location as unique identifier
+                        func_id = f"{function_info['name']}:{function_info['file']}"
+                        if func_id not in seen_functions:
+                            seen_functions.add(func_id)
+                            functions.append(function_info)
+            
+            # Recursively process child nodes
+            for child in cursor.get_children():
+                _extract_recursive(child)
+        
+        _extract_recursive(cursor)
     
     def _get_function_info(self, cursor, file_path: str) -> Optional[Dict[str, Any]]:
         """Extract detailed information about a function"""
@@ -103,6 +114,9 @@ class ClangAnalyzer:
             is_static = cursor.storage_class == clang.cindex.StorageClass.STATIC
             access_specifier = self._get_access_specifier(cursor)
             
+            # Extract function body
+            function_body = self._extract_function_body(cursor)
+            
             return {
                 'name': function_name,
                 'return_type': return_type,
@@ -111,12 +125,38 @@ class ClangAnalyzer:
                 'line': cursor.location.line,
                 'is_static': is_static,
                 'access_specifier': access_specifier,
-                'language': 'cpp' if file_path.endswith(('.cpp', '.cc', '.cxx')) else 'c'
+                'language': 'cpp' if file_path.endswith(('.cpp', '.cc', '.cxx')) else 'c',
+                'body': function_body
             }
             
         except Exception as e:
             print(f"Error extracting function info: {e}")
             return None
+    
+    def _extract_function_body(self, cursor) -> str:
+        """Extract the function body from cursor"""
+        try:
+            if not cursor.is_definition():
+                return ""
+            
+            # Get the source range of the function body
+            extent = cursor.extent
+            start = extent.start
+            end = extent.end
+            
+            # Read the source file and extract the function body
+            source_file = start.file
+            if source_file:
+                with open(source_file.name, 'r', encoding='utf-8', errors='ignore') as f:
+                    lines = f.readlines()
+                    # Extract lines from start to end (1-based to 0-based conversion)
+                    body_lines = lines[start.line-1:end.line]
+                    return ''.join(body_lines).strip()
+            
+            return ""
+        except Exception as e:
+            print(f"Error extracting function body: {e}")
+            return ""
     
     def _get_access_specifier(self, cursor) -> str:
         """Get C++ access specifier (public, private, protected)"""

@@ -21,19 +21,34 @@ Since this is a new Python project, typical development commands will include:
 - `python -m pytest tests/` - Run tests
 - `python src/main.py` - Run the main application
 
-## Code Structure (Planned)
+## Code Structure (Current)
 
 ```
 ai-dt/
 ├── src/
 │   ├── parser/          # Code parsing (compile_commands.json analysis)
+│   │   ├── __init__.py
+│   │   └── compilation_db.py
 │   ├── analyzer/        # Function identification and filtering
-│   ├── generator/       # Test case generation
-│   └── utils/           # Utility functions
+│   │   ├── __init__.py
+│   │   ├── call_analyzer.py
+│   │   ├── clang_analyzer.py
+│   │   └── function_analyzer.py
+│   ├── generator/       # Test case generation (directory exists)
+│   ├── utils/           # Utility functions
+│   │   ├── compile_db_generator.py
+│   │   └── path_converter.py
+│   ├── __init__.py
+│   └── main.py
 ├── config/              # Configuration files
 ├── templates/           # Test template files
 ├── tests/               # Unit tests for the tool itself
-└── docs/                # Documentation
+├── test_projects/       # Sample test projects
+│   ├── c/              # C language test project
+│   └── cpp/            # C++ language test project
+├── docs/                # Documentation
+├── requirements.txt     # Python dependencies
+└── requirements.md      # Requirements documentation
 ```
 
 ## Key Constraints

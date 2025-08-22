@@ -63,10 +63,17 @@ class FunctionAnalyzer:
         # Find call sites across the project
         call_sites = self.call_analyzer.find_call_sites(function_name, compilation_units)
         
-        # Analyze each call site context
+        # Analyze each call site context with deduplication
         analyzed_call_sites = []
+        seen_call_contexts = set()
+        
         for call_site in call_sites:
-            analyzed_call_sites.append(self.call_analyzer.analyze_call_context(call_site))
+            analyzed_context = self.call_analyzer.analyze_call_context(call_site)
+            # Create unique identifier for call context to avoid duplicates
+            context_id = f"{analyzed_context['file']}:{analyzed_context['line']}"
+            if context_id not in seen_call_contexts:
+                seen_call_contexts.add(context_id)
+                analyzed_call_sites.append(analyzed_context)
         
         # TODO: Add dependency analysis from clang_analyzer
         

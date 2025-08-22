@@ -37,6 +37,7 @@ def test_c_project():
             print(f"    Return: {func['return_type']}")
             print(f"    Params: {len(func['parameters'])}")
             print(f"    Static: {func['is_static']}")
+            print(f"    Function body: {func['body']}")
             print(f"    Testable: {analyzer._is_testable_function(func)}")
             print(f"    Call sites: {len(func['context']['call_sites'])}")
     
@@ -87,10 +88,13 @@ def main():
         print(f"C++ functions found: {len(cpp_functions)}")
         
         # Count testable functions
+        analyzer_c = FunctionAnalyzer("test_projects/c")
+        analyzer_cpp = FunctionAnalyzer("test_projects/cpp")
+        
         c_testable = sum(1 for f in c_functions 
-                       if analyzer._is_testable_function(f))
+                       if analyzer_c._is_testable_function(f))
         cpp_testable = sum(1 for f in cpp_functions 
-                         if analyzer._is_testable_function(f))
+                         if analyzer_cpp._is_testable_function(f))
         
         print(f"Testable C functions: {c_testable}")
         print(f"Testable C++ functions: {cpp_testable}")

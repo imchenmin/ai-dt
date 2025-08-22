@@ -1,0 +1,61 @@
+# Build artifacts
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test outputs
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Compiled extensions
+*.so
+*.dll
+*.dylib
+
+# C/C++ build artifacts
+*.o
+*.obj
+*.out
+*.exe
+
+# Python packaging
+*.egg
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite3
+
+# Jupyter notebooks
+.ipynb_checkpoints/
