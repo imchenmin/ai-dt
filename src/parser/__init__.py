@@ -1,0 +1,1 @@
+"""Parser module for analyzing compilation databases and code structure"""
