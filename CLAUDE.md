@@ -69,10 +69,17 @@ ai-dt/
   - C++: Public methods and free functions identified
 - **Call Site Analysis**: Detects function call locations across project with deduplication
 - **Compile Commands Processing**: Handles compile_commands.json with relative paths
+- **LLM Integration**: Complete OpenAI and DeepSeek API support
+  - OpenAI: GPT-3.5-turbo, GPT-4 models
+  - DeepSeek: deepseek-chat, deepseek-coder models
+  - Multi-provider configuration management
+  - Context compression for token optimization
 
 ### ⚠️ Pending Improvements
 - C++ class method analysis needs enhancement
 - Better handling of complex template types
+- Enhanced error handling for different LLM providers
+- Batch processing optimization for large codebases
 
 ## Important Patterns
 
