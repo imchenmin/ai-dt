@@ -7,9 +7,16 @@ import tempfile
 from pathlib import Path
 from typing import List, Dict, Any
 
+from .clang_analyzer import ClangAnalyzer
+from .call_analyzer import CallAnalyzer
+
 
 class FunctionAnalyzer:
     """Analyzes C/C++ files to identify testable functions"""
+    
+    def __init__(self, project_root: str = "."):
+        self.clang_analyzer = ClangAnalyzer()
+        self.call_analyzer = CallAnalyzer(project_root)
     
     def analyze_file(self, file_path: str, compile_args: List[str]) -> List[Dict[str, Any]]:
         """Analyze a C/C++ file and return testable functions"""
@@ -30,9 +37,7 @@ class FunctionAnalyzer:
     
     def _extract_functions_with_clang(self, file_path: str, compile_args: List[str]) -> List[Dict[str, Any]]:
         """Use clang to extract function information from source file"""
-        # TODO: Implement clang-based function extraction
-        # This is a placeholder - will use libclang or clang AST parsing
-        return []
+        return self.clang_analyzer.analyze_file(file_path, compile_args)
     
     def _is_testable_function(self, function_info: Dict[str, Any]) -> bool:
         """Determine if a function is testable based on rules"""
@@ -50,12 +55,24 @@ class FunctionAnalyzer:
             )
         return False
     
-    def _analyze_function_context(self, function_info: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_function_context(self, function_info: Dict[str, Any], compile_args: List[str], 
+                                 compilation_units: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Analyze function context including dependencies and usage"""
-        # TODO: Implement context analysis
+        function_name = function_info['name']
+        
+        # Find call sites across the project
+        call_sites = self.call_analyzer.find_call_sites(function_name, compilation_units)
+        
+        # Analyze each call site context
+        analyzed_call_sites = []
+        for call_site in call_sites:
+            analyzed_call_sites.append(self.call_analyzer.analyze_call_context(call_site))
+        
+        # TODO: Add dependency analysis from clang_analyzer
+        
         return {
             'called_functions': [],
             'macros_used': [],
             'data_structures': [],
-            'call_sites': []
+            'call_sites': analyzed_call_sites
         }

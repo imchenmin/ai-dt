@@ -29,11 +29,18 @@ def main():
     compilation_units = comp_db_parser.parse()
     
     # Analyze functions
-    function_analyzer = FunctionAnalyzer()
+    function_analyzer = FunctionAnalyzer(args.project)
     testable_functions = []
     
     for unit in compilation_units:
         functions = function_analyzer.analyze_file(unit['file'], unit['arguments'])
+        
+        # Add context information to each function
+        for func in functions:
+            func['context'] = function_analyzer._analyze_function_context(
+                func, unit['arguments'], compilation_units
+            )
+        
         testable_functions.extend(functions)
     
     # Generate tests
