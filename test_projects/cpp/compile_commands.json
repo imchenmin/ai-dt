@@ -1,12 +1,12 @@
 [
   {
-    "directory": "C:/Users/chenmin/ai-dt/test_projects/cpp",
-    "command": "g++ -c calculator.cpp -o calculator.o -std=c++11",
+    "directory": "C:\\Users\\chenmin\\ai-dt\\test_projects\\cpp",
+    "command": "g++ -IC:\\Users\\chenmin\\ai-dt\\test_projects\\cpp -std=c++11 -c calculator.cpp -o calculator.o",
     "file": "calculator.cpp"
   },
   {
-    "directory": "C:/Users/chenmin/ai-dt/test_projects/cpp",
-    "command": "g++ -c main.cpp -o main.o -std=c++11",
+    "directory": "C:\\Users\\chenmin\\ai-dt\\test_projects\\cpp",
+    "command": "g++ -IC:\\Users\\chenmin\\ai-dt\\test_projects\\cpp -std=c++11 -c main.cpp -o main.o",
     "file": "main.cpp"
   }
 ]

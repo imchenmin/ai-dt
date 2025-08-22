@@ -9,8 +9,8 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
-from parser.compilation_db import CompilationDatabaseParser
-from analyzer.function_analyzer import FunctionAnalyzer
+from src.parser.compilation_db import CompilationDatabaseParser
+from src.analyzer.function_analyzer import FunctionAnalyzer
 
 def test_c_project():
     """Test C project analysis"""

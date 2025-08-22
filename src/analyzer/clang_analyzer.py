@@ -11,23 +11,42 @@ class ClangAnalyzer:
     """C/C++ code analyzer using libclang AST parsing"""
     
     def __init__(self):
-        # Configure libclang - may need to set library path
+        # Configure libclang - try to auto-discover library
+        self._configure_libclang()
+    
+    def _configure_libclang(self):
+        """Configure libclang library path"""
         try:
-            clang.cindex.Config.set_library_path(self._find_libclang())
+            import clang.cindex
+            
+            # Check if library is already configured
+            if clang.cindex.Config.library_file:
+                print(f"libclang library found: {clang.cindex.Config.library_file}")
+                return
+            
+            # Try to set library file from known path
+            lib_path = clang.cindex.Config.library_path
+            if lib_path:
+                # Look for libclang.dll in the library path
+                import os
+                libclang_path = os.path.join(lib_path, 'libclang.dll')
+                if os.path.exists(libclang_path):
+                    clang.cindex.Config.set_library_file(libclang_path)
+                    print(f"Set libclang library to: {libclang_path}")
+                else:
+                    print(f"libclang.dll not found in: {lib_path}")
+            
         except Exception as e:
             print(f"Warning: Could not configure libclang: {e}")
-    
-    def _find_libclang(self) -> str:
-        """Find libclang library path"""
-        # TODO: Implement proper libclang discovery
-        # This is platform-specific and may need user configuration
-        return ""
     
     def analyze_file(self, file_path: str, compile_args: List[str]) -> List[Dict[str, Any]]:
         """Analyze a C/C++ file and extract function information"""
         path = Path(file_path)
         if not path.exists():
+            print(f"File not found: {file_path}")
             return []
+        
+        print(f"Analyzing {file_path} with args: {compile_args}")
         
         index = clang.cindex.Index.create()
         
@@ -35,13 +54,20 @@ class ClangAnalyzer:
             # Parse the file with compilation arguments
             translation_unit = index.parse(file_path, args=compile_args)
             
+            if translation_unit is None:
+                print(f"Failed to parse {file_path}")
+                return []
+            
             functions = []
             self._extract_functions(translation_unit.cursor, functions, file_path)
             
+            print(f"Found {len(functions)} functions in {file_path}")
             return functions
             
         except Exception as e:
             print(f"Error analyzing {file_path}: {e}")
+            import traceback
+            traceback.print_exc()
             return []
     
     def _extract_functions(self, cursor, functions: List[Dict[str, Any]], file_path: str):

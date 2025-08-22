@@ -1,12 +1,12 @@
 [
   {
-    "directory": "C:/Users/chenmin/ai-dt/test_projects/c",
-    "command": "gcc -c math_utils.c -o math_utils.o",
-    "file": "math_utils.c"
+    "directory": "C:\\Users\\chenmin\\ai-dt\\test_projects\\c",
+    "command": "gcc -IC:\\Users\\chenmin\\ai-dt\\test_projects\\c -std=gnu11 -c main.c -o main.o",
+    "file": "main.c"
   },
   {
-    "directory": "C:/Users/chenmin/ai-dt/test_projects/c",
-    "command": "gcc -c main.c -o main.o",
-    "file": "main.c"
+    "directory": "C:\\Users\\chenmin\\ai-dt\\test_projects\\c",
+    "command": "gcc -IC:\\Users\\chenmin\\ai-dt\\test_projects\\c -std=gnu11 -c math_utils.c -o math_utils.o",
+    "file": "math_utils.c"
   }
 ]

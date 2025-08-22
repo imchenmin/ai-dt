@@ -23,8 +23,13 @@ class CompilationDatabaseParser:
         
         compilation_units = []
         for command in compile_commands:
+            # Resolve relative file paths
+            file_path = Path(command['file'])
+            if not file_path.is_absolute():
+                file_path = Path(command['directory']) / file_path
+            
             unit = {
-                'file': command['file'],
+                'file': str(file_path.resolve()),
                 'directory': command['directory'],
                 'arguments': self._parse_arguments(command['command']),
                 'output': command.get('output', '')
@@ -35,8 +40,36 @@ class CompilationDatabaseParser:
     
     def _parse_arguments(self, command: str) -> List[str]:
         """Parse compiler command arguments"""
-        # Simple argument parsing - can be enhanced
-        return command.split()[1:]  # Skip the compiler executable
+        # Extract only relevant compilation flags
+        args = command.split()
+        
+        # Filter out compiler executable and output/file arguments
+        filtered_args = []
+        skip_next = False
+        
+        for i, arg in enumerate(args):
+            if skip_next:
+                skip_next = False
+                continue
+            
+            # Skip compiler executable
+            if i == 0 and ('gcc' in arg or 'g++' in arg or 'clang' in arg or 'cc' in arg):
+                continue
+            
+            # Skip output file arguments
+            if arg in ['-o', '-c']:
+                skip_next = True
+                continue
+            
+            # Skip source file names (they're handled separately)
+            if arg.endswith(('.c', '.cpp', '.cc', '.cxx', '.o')):
+                continue
+            
+            # Keep include paths, definitions, and other flags
+            if arg.startswith(('-I', '-D', '-std=', '-O')):
+                filtered_args.append(arg)
+        
+        return filtered_args
     
     def get_file_dependencies(self, file_path: str) -> List[str]:
         """Get include dependencies for a specific file"""
