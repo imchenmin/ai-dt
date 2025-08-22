@@ -63,15 +63,15 @@ ai-dt/
 ### ✅ Verified Features
 - **libclang Integration**: Successfully parses C/C++ AST
 - **Function Signature Extraction**: Correctly extracts return types and parameters
+- **Function Body Extraction**: Extracts complete function implementation code
 - **Testable Function Identification**: 
   - C: Non-static functions correctly identified
   - C++: Public methods and free functions identified
-- **Call Site Analysis**: Detects function call locations across project
+- **Call Site Analysis**: Detects function call locations across project with deduplication
 - **Compile Commands Processing**: Handles compile_commands.json with relative paths
 
 ### ⚠️ Pending Improvements
 - C++ class method analysis needs enhancement
-- Function deduplication across translation units
 - Better handling of complex template types
 
 ## Important Patterns
