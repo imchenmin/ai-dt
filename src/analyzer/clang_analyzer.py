@@ -27,14 +27,25 @@ class ClangAnalyzer:
             # Try to set library file from known path
             lib_path = clang.cindex.Config.library_path
             if lib_path:
-                # Look for libclang.dll in the library path
+                # Look for libclang.so in the library path (Linux)
                 import os
-                libclang_path = os.path.join(lib_path, 'libclang.dll')
+                libclang_path = os.path.join(lib_path, 'libclang.so.1')
                 if os.path.exists(libclang_path):
                     clang.cindex.Config.set_library_file(libclang_path)
                     print(f"Set libclang library to: {libclang_path}")
                 else:
-                    print(f"libclang.dll not found in: {lib_path}")
+                    # Try alternative paths for Ubuntu
+                    ubuntu_paths = [
+                        '/usr/lib/llvm-10/lib/libclang.so.1',
+                        '/usr/lib/x86_64-linux-gnu/libclang-10.so.1'
+                    ]
+                    for path in ubuntu_paths:
+                        if os.path.exists(path):
+                            clang.cindex.Config.set_library_file(path)
+                            print(f"Set libclang library to: {path}")
+                            break
+                    else:
+                        print(f"libclang.so.1 not found in standard locations")
             
         except Exception as e:
             print(f"Warning: Could not configure libclang: {e}")
@@ -51,8 +62,9 @@ class ClangAnalyzer:
         index = clang.cindex.Index.create()
         
         try:
-            # Parse the file with compilation arguments
-            translation_unit = index.parse(file_path, args=compile_args)
+            # Parse the file with compilation arguments and detailed processing for macros
+            translation_unit = index.parse(file_path, args=compile_args, 
+                                         options=clang.cindex.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
             
             if translation_unit is None:
                 print(f"Failed to parse {file_path}")
@@ -176,21 +188,26 @@ class ClangAnalyzer:
         """Analyze function dependencies (called functions, macros, etc.)"""
         called_functions = []
         macros_used = []
+        macro_definitions = []
         data_structures = []
         include_directives = []
         
         # Analyze function body for dependencies
-        self._analyze_dependencies(cursor, called_functions, macros_used, data_structures, include_directives)
+        self._analyze_dependencies(cursor, called_functions, macros_used, macro_definitions, data_structures, include_directives)
+        
+        # Extract full macro definitions for used macros
+        full_macro_defs = self._get_macro_definitions(macros_used, file_path, compile_args)
         
         return {
             'called_functions': called_functions,
             'macros_used': macros_used,
+            'macro_definitions': full_macro_defs,
             'data_structures': data_structures,
             'include_directives': include_directives
         }
     
     def _analyze_dependencies(self, cursor, called_functions: List, macros_used: List, 
-                            data_structures: List, include_directives: List):
+                            macro_definitions: List, data_structures: List, include_directives: List):
         """Recursively analyze AST for dependencies"""
         # Check if this is a function call
         if cursor.kind == clang.cindex.CursorKind.CALL_EXPR:
@@ -210,6 +227,12 @@ class ClangAnalyzer:
             if macro_name and macro_name not in macros_used:
                 macros_used.append(macro_name)
         
+        # Check for macro definitions
+        elif cursor.kind == clang.cindex.CursorKind.MACRO_DEFINITION:
+            macro_def = self._extract_macro_definition(cursor)
+            if macro_def and macro_def not in macro_definitions:
+                macro_definitions.append(macro_def)
+        
         # Check for data structure usage (struct/class types)
         elif cursor.kind in [clang.cindex.CursorKind.STRUCT_DECL, clang.cindex.CursorKind.CLASS_DECL,
                            clang.cindex.CursorKind.TYPE_REF, clang.cindex.CursorKind.TYPEDEF_DECL]:
@@ -225,5 +248,78 @@ class ClangAnalyzer:
         
         # Recursively process children
         for child in cursor.get_children():
-            self._analyze_dependencies(child, called_functions, macros_used, 
+            self._analyze_dependencies(child, called_functions, macros_used, macro_definitions,
                                      data_structures, include_directives)
+    
+    def _extract_macro_definition(self, cursor) -> Dict[str, Any]:
+        """Extract complete macro definition information"""
+        try:
+            macro_name = cursor.spelling
+            
+            # Skip system macros (those starting with __)
+            if macro_name.startswith('__'):
+                return None
+            
+            # Get macro definition location safely
+            location_file = cursor.location.file
+            if not location_file:
+                return None  # Skip macros without file location (usually system macros)
+            
+            location_str = f"{location_file.name}:{cursor.location.line}"
+            
+            # Extract macro tokens to get the full definition
+            tokens = list(cursor.get_tokens())
+            if len(tokens) >= 2:
+                # The first token is the macro name, the rest is the definition
+                definition_tokens = [t.spelling for t in tokens[1:]]
+                full_definition = ' '.join(definition_tokens).strip()
+            else:
+                full_definition = ""
+            
+            # Check if it's a function-like macro
+            is_function_like = any('(' in token.spelling for token in tokens if token.spelling)
+            has_parameters = len(tokens) > 1 and '(' in tokens[1].spelling if len(tokens) > 1 else False
+            
+            return {
+                'name': macro_name,
+                'definition': full_definition,
+                'location': location_str,
+                'is_function_like': is_function_like,
+                'has_parameters': has_parameters
+            }
+            
+        except Exception as e:
+            print(f"Error extracting macro definition: {e}")
+            return None
+    
+    def _get_macro_definitions(self, macro_names: List[str], file_path: str, compile_args: List[str]) -> List[Dict[str, Any]]:
+        """Get full definitions for specific macros by parsing the file"""
+        if not macro_names:
+            return []
+        
+        try:
+            index = clang.cindex.Index.create()
+            translation_unit = index.parse(file_path, args=compile_args, 
+                                         options=clang.cindex.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
+            
+            if translation_unit is None:
+                return []
+            
+            macro_definitions = []
+            
+            # Recursively find all macro definitions in the file
+            def _find_macro_defs(cursor):
+                if cursor.kind == clang.cindex.CursorKind.MACRO_DEFINITION:
+                    macro_def = self._extract_macro_definition(cursor)
+                    if macro_def and macro_def['name'] in macro_names:
+                        macro_definitions.append(macro_def)
+                
+                for child in cursor.get_children():
+                    _find_macro_defs(child)
+            
+            _find_macro_defs(translation_unit.cursor)
+            return macro_definitions
+            
+        except Exception as e:
+            print(f"Error getting macro definitions: {e}")
+            return []

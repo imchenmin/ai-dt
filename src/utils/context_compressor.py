@@ -52,14 +52,25 @@ class ContextCompressor:
         """Compress dependency information"""
         called_funcs = context.get('called_functions', [])
         macros = context.get('macros_used', [])
+        macro_defs = context.get('macro_definitions', [])
         data_structs = context.get('data_structures', [])
+        
+        # Get full definitions for used macros
+        macro_definitions = []
+        for macro_name in macros[:3]:  # Top 3 most relevant macros
+            # Find definition for this macro
+            for macro_def in macro_defs:
+                if macro_def['name'] == macro_name:
+                    macro_definitions.append(macro_def)
+                    break
         
         return {
             'called_functions': [
                 {'name': f['name'], 'location': f.get('location', 'unknown')}
                 for f in called_funcs[:3]  # Top 3 most relevant
             ],
-            'macros': macros[:2],  # Top 2 macros
+            'macros': macros[:3],  # Top 3 macros
+            'macro_definitions': macro_definitions[:2],  # Top 2 macro definitions
             'data_structures': data_structs[:2]  # Top 2 data structures
         }
     
@@ -134,10 +145,27 @@ class ContextCompressor:
             "# 依赖分析",
             f"调用的函数: {', '.join([f['name'] for f in deps['called_functions']]) or '无'}",
             f"使用的宏: {', '.join(deps['macros']) or '无'}",
+            "",
+            "# 宏定义详情"
+        ]
+        
+        # Add macro definitions if available
+        if deps.get('macro_definitions'):
+            for macro_def in deps['macro_definitions']:
+                prompt_parts.extend([
+                    f"宏 {macro_def['name']}:",
+                    f"定义: {macro_def['definition']}",
+                    f"位置: {macro_def['location']}",
+                    ""
+                ])
+        else:
+            prompt_parts.append("宏定义: 无详细定义信息")
+            
+        prompt_parts.extend([
             f"关键数据结构: {', '.join(deps['data_structures']) or '无'}",
             "",
             "# 使用示例"
-        ]
+        ])
         
         for i, site in enumerate(usage, 1):
             prompt_parts.extend([

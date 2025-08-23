@@ -7,8 +7,12 @@ import sys
 import os
 from pathlib import Path
 
+# Configure libclang first
+import clang.cindex
+clang.cindex.Config.set_library_file('/usr/lib/llvm-10/lib/libclang.so.1')
+
 # Add src to path
-sys.path.insert(0, str(Path(__file__).parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.parser.compilation_db import CompilationDatabaseParser
 from src.analyzer.function_analyzer import FunctionAnalyzer

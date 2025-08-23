@@ -36,6 +36,9 @@ COMPILE_COMMANDS=compile_commands.json
 
 # LLM Provider Selection (optional)
 LLM_PROVIDER=deepseek  # deepseek, openai, anthropic, or mock
+
+# libclang configuration (optional - auto-detected if not set)
+LIBCLANG_PATH=/usr/lib/llvm-10/lib/libclang.so.1
 ```
 
 Or set environment variables directly:
@@ -54,8 +57,25 @@ export OPENAI_API_KEY=your_openai_api_key_here
 # Install clang-10 development package
 sudo apt install -y libclang-10-dev clang-10
 
-# Configure Python clang bindings
+# Configure Python clang bindings (run this once)
 python -c "import clang.cindex; clang.cindex.Config.set_library_file('/usr/lib/llvm-10/lib/libclang.so.1')"
+
+# Alternative library paths (if the above doesn't work):
+# /usr/lib/x86_64-linux-gnu/libclang-10.so.1
+# /usr/lib/llvm-10/lib/libclang.so
+
+# For persistent configuration, add to your .bashrc or .zshrc:
+echo "export LIBCLANG_PATH=/usr/lib/llvm-10/lib/libclang.so.1" >> ~/.bashrc
+```
+
+### Windows libclang Setup
+```bash
+# Download LLVM for Windows from: https://github.com/llvm/llvm-project/releases
+# Add LLVM bin directory to PATH
+set PATH=C:\Program Files\LLVM\bin;%PATH%
+
+# Configure Python clang bindings
+python -c "import clang.cindex; clang.cindex.Config.set_library_file('C:\\Program Files\\LLVM\\bin\\libclang.dll')"
 ```
 
 ## 🚀 Available Scripts
@@ -202,6 +222,7 @@ test_gen = TestGenerator(
 | `LLM_PROVIDER` | Force specific provider | No | Auto-detect |
 | `PROJECT_ROOT` | Project root path | No | `./test_projects/c` |
 | `COMPILE_COMMANDS` | Compilation database | No | `compile_commands.json` |
+| `LIBCLANG_PATH` | libclang library path | No | Auto-detected |
 
 ## 🐛 Troubleshooting
 
@@ -226,6 +247,16 @@ test_gen = TestGenerator(
    # Error: Model Not Exist
    # Solution: Use supported models only
    # Supported: deepseek-chat, deepseek-coder
+   ```
+
+4. **libclang Configuration Error**
+   ```bash
+   # Error: libclang-14.so: cannot open shared object file
+   # Solution: Configure libclang library path
+   python -c "import clang.cindex; clang.cindex.Config.set_library_file('/usr/lib/llvm-10/lib/libclang.so.1')"
+   
+   # Or set environment variable:
+   export LIBCLANG_PATH=/usr/lib/llvm-10/lib/libclang.so.1
    ```
 
 ### Getting Help
