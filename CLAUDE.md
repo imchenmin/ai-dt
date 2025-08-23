@@ -34,18 +34,40 @@ ai-dt/
 │   │   ├── call_analyzer.py
 │   │   ├── clang_analyzer.py
 │   │   └── function_analyzer.py
-│   ├── generator/       # Test case generation (directory exists)
+│   ├── generator/       # Test case generation
+│   │   ├── __init__.py
+│   │   ├── test_generator.py
+│   │   └── llm_client.py
 │   ├── utils/           # Utility functions
+│   │   ├── __init__.py
 │   │   ├── compile_db_generator.py
-│   │   └── path_converter.py
+│   │   ├── path_converter.py
+│   │   ├── context_compressor.py
+│   │   └── libclang_config.py
 │   ├── __init__.py
 │   └── main.py
+├── scripts/             # Demo and utility scripts
+│   ├── demo_llm_integration.py
+│   ├── demo_complex_c_integration.py
+│   └── batch_test_generation.py
 ├── config/              # Configuration files
+│   └── complex_c_test_generation.yaml
 ├── templates/           # Test template files
 ├── tests/               # Unit tests for the tool itself
 ├── test_projects/       # Sample test projects
-│   ├── c/              # C language test project
-│   └── cpp/            # C++ language test project
+│   ├── c/              # Simple C language test project
+│   └── complex_c_project/  # Complex C project with multiple modules
+│       ├── data_structures/
+│       │   ├── linked_list.h
+│       │   ├── linked_list.c
+│       │   ├── hash_table.h
+│       │   └── hash_table.c
+│       ├── utils/
+│       │   ├── memory_pool.h
+│       │   └── memory_pool.c
+│       ├── main.c
+│       └── compile_commands.json
+├── generated_tests_complex_c/  # Generated test files for complex project
 ├── docs/                # Documentation
 ├── requirements.txt     # Python dependencies
 └── requirements.md      # Requirements documentation
@@ -74,12 +96,24 @@ ai-dt/
   - DeepSeek: deepseek-chat, deepseek-coder models (tested and working)
   - Multi-provider configuration management
   - Context compression for token optimization
+- **Complex C Project Support**: Full support for multi-module C projects with:
+  - Linked list data structures (12 functions)
+  - Hash table implementations (10 functions) 
+  - Memory pool utilities (9 functions)
+  - Cross-module function call analysis
+- **Batch Processing**: Automated batch test generation for large codebases
+- **Comprehensive Test Generation**: AI-powered generation of:
+  - Normal case testing
+  - Boundary condition testing
+  - Exception handling scenarios
+  - Mocking of external dependencies (malloc, etc.)
+  - Multiple call scenario testing
 
 ### ⚠️ Pending Improvements
 - C++ class method analysis needs enhancement
 - Better handling of complex template types
 - Enhanced error handling for different LLM providers
-- Batch processing optimization for large codebases
+- Optimization for very large codebases (>1000 functions)
 
 ## Claude Code Integration Notes
 
@@ -113,15 +147,108 @@ export LIBCLANG_PATH=/usr/lib/llvm-10/lib/libclang.so.1
 - Set `DEEPSEEK_API_KEY` in environment or `.env` file
 - Tested and verified working with both deepseek-chat and deepseek-coder models
 - Generated tests saved in `generated_tests_deepseek_*/` directories
+- **Proxy Configuration Note**: If encountering proxy issues, clear malformed proxy environment variables:
+  ```bash
+  unset https_proxy http_proxy all_proxy
+  ```
 
 ### Quick Test Generation
 ```bash
+# Simple project test generation
 DEEPSEEK_API_KEY="your_key" python demo_deepseek_integration.py
+
+# Complex project test generation
+DEEPSEEK_API_KEY="your_key" python scripts/demo_complex_c_integration.py
+
+# Batch processing for large projects
+DEEPSEEK_API_KEY="your_key" python scripts/batch_test_generation.py
 ```
+
+## Complex C Project Details
+
+The complex C project located in `test_projects/complex_c_project/` demonstrates the tool's capabilities with:
+
+### **Data Structures Implemented**
+- **Linked List Module** (`data_structures/linked_list.{h,c}`):
+  - 12 functions including create, destroy, append, prepend, insert/remove at index
+  - Comprehensive memory management with proper error handling
+  - Iterator pattern implementation
+
+- **Hash Table Module** (`data_structures/hash_table.{h,c}`):
+  - 10 functions with DJB2 hashing algorithm
+  - Dynamic resizing and collision handling
+  - Key-value storage with efficient lookup
+
+- **Memory Pool Module** (`utils/memory_pool.{h,c}`):
+  - 9 functions implementing best-fit allocation
+  - Memory usage tracking and validation
+  - Error code enumeration for robust error handling
+
+### **Test Generation Features**
+- **Comprehensive Coverage**: Tests generated for all 31 testable functions
+- **Mocking Support**: Automatic mocking of external dependencies (malloc, etc.)
+- **Boundary Testing**: Tests for normal, boundary, and exception scenarios
+- **Multi-call Scenarios**: Testing functions under multiple invocation patterns
+- **Structure Validation**: Verification of data structure initialization
 
 ## Important Patterns
 
-- Function filtering: Non-static (C), public/static methods (C++)
-- Context minimization: Extract only essential information for test generation
-- Mock generation: Automatically mock external function dependencies
-- Traceability: Include timestamps, source version, and model parameters in generated tests
+- **Function filtering**: Non-static (C), public/static methods (C++)
+- **Context minimization**: Extract only essential information for test generation
+- **Mock generation**: Automatically mock external function dependencies
+- **Traceability**: Include timestamps, source version, and model parameters in generated tests
+- **Batch processing**: Automated generation for large codebases with rate limiting
+- **Error resilience**: Fallback to mock tests when LLM generation fails
+
+## Lessons Learned and Common Pitfalls
+
+### 🔧 Repeated Issues and Solutions
+
+1. **Proxy Configuration Issues**:
+   - **Problem**: Malformed proxy environment variables causing "Invalid IPv4 address" errors
+   - **Solution**: Clear proxy variables before running LLM integration:
+     ```bash
+     unset https_proxy http_proxy all_proxy
+     # Or use clean environment:
+     env -i DEEPSEEK_API_KEY="your_key" python script.py
+     ```
+
+2. **Python Path Configuration**:
+   - **Problem**: Module import errors due to incorrect Python path
+   - **Solution**: Ensure proper path setup in scripts:
+     ```python
+     import sys
+     from pathlib import Path
+     sys.path.insert(0, str(Path(__file__).parent.parent))
+     ```
+
+3. **libclang Configuration**:
+   - **Problem**: libclang not found or improperly configured
+   - **Solution**: Use unified configuration approach:
+     ```python
+     from src.utils.libclang_config import ensure_libclang_configured
+     ensure_libclang_configured()
+     ```
+
+4. **LLM API Timeouts**:
+   - **Problem**: Long-running test generation timing out
+   - **Solution**: Implement batch processing with delays:
+     ```python
+     # Add delays between API calls
+     time.sleep(2)  # Between individual generations
+     time.sleep(10) # Between batches
+     ```
+
+5. **Function Analysis Errors**:
+   - **Problem**: Dictionary vs object attribute access issues
+   - **Solution**: Consistent access patterns and proper error handling
+
+### 🚀 Best Practices Established
+
+1. **Always use absolute paths** for file operations
+2. **Implement comprehensive error handling** in all LLM interactions
+3. **Use environment isolation** for reliable API connectivity
+4. **Batch processing** for large-scale test generation
+5. **Fallback mechanisms** when LLM generation fails
+6. **Proper mocking** of external dependencies in tests
+7. **Memory safety** in all test cases (proper cleanup)

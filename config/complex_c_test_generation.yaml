@@ -1,0 +1,165 @@
+# Test Generation Configuration for Complex C Project
+# This config targets the complex C project with multiple modules
+
+# Inherit from default configuration
+_default: &defaults
+  llm_provider: "deepseek"
+  model: "deepseek-coder"
+  max_tokens: 3000  # Increased for complex functions
+  temperature: 0.2  # Lower temperature for more deterministic output
+  output_dir: "./generated_tests_complex_c"
+  
+  # Function filtering options
+  filter:
+    skip_std_lib: true
+    skip_compiler_builtins: true
+    skip_operators: false  # Include operators for complex types
+    skip_special_functions: false  # Include special functions
+    custom_include_patterns: []
+    custom_exclude_patterns: ["main", "^_.*"]  # Exclude main and internal functions
+
+# Complex C project configuration
+complex_c_project:
+  path: "test_projects/complex_c_project"
+  comp_db: "test_projects/complex_c_project/compile_commands.json"
+  description: "Complex C project with data structures, algorithms, and memory management"
+  
+  # Use custom output directory
+  output_dir: "./generated_tests_complex_c"
+  
+  # Function-specific settings for complex C project
+  functions:
+    # Linked List functions
+    list_create:
+      priority: 1
+      test_cases: 6
+      focus: ["memory_allocation", "initialization", "null_safety"]
+    list_append:
+      priority: 1
+      test_cases: 8
+      focus: ["normal_cases", "edge_cases", "memory_management"]
+    list_prepend:
+      priority: 1
+      test_cases: 8
+      focus: ["normal_cases", "edge_cases", "memory_management"]
+    list_insert_at:
+      priority: 2
+      test_cases: 10
+      focus: ["boundary_conditions", "error_handling", "index_validation"]
+    list_remove_at:
+      priority: 2
+      test_cases: 10
+      focus: ["boundary_conditions", "memory_cleanup", "index_validation"]
+    list_get_at:
+      priority: 1
+      test_cases: 6
+      focus: ["normal_cases", "edge_cases", "error_handling"]
+    list_contains:
+      priority: 1
+      test_cases: 6
+      focus: ["existence_checking", "edge_cases"]
+    list_reverse:
+      priority: 2
+      test_cases: 8
+      focus: ["algorithm_correctness", "edge_cases", "memory_integrity"]
+    list_foreach:
+      priority: 2
+      test_cases: 8
+      focus: ["iterator_pattern", "callback_functionality", "early_termination"]
+    list_destroy:
+      priority: 1
+      test_cases: 6
+      focus: ["memory_cleanup", "null_safety", "double_free_prevention"]
+    
+    # Hash Table functions
+    hash_table_create:
+      priority: 1
+      test_cases: 6
+      focus: ["memory_allocation", "initialization", "capacity_handling"]
+    hash_table_put:
+      priority: 1
+      test_cases: 12
+      focus: ["key_value_storage", "collision_handling", "update_behavior", "memory_management"]
+    hash_table_get:
+      priority: 1
+      test_cases: 10
+      focus: ["retrieval_accuracy", "non_existent_keys", "error_handling"]
+    hash_table_remove:
+      priority: 2
+      test_cases: 10
+      focus: ["deletion_correctness", "memory_cleanup", "non_existent_keys"]
+    hash_table_contains:
+      priority: 1
+      test_cases: 6
+      focus: ["existence_checking", "edge_cases"]
+    hash_table_foreach:
+      priority: 2
+      test_cases: 8
+      focus: ["iteration_completeness", "callback_functionality", "early_termination"]
+    default_hash_function:
+      priority: 3
+      test_cases: 8
+      focus: ["hash_distribution", "collision_resistance", "edge_cases"]
+    
+    # Memory Pool functions
+    memory_pool_create:
+      priority: 1
+      test_cases: 8
+      focus: ["memory_allocation", "initialization", "parameter_validation"]
+    memory_pool_alloc:
+      priority: 1
+      test_cases: 12
+      focus: ["memory_allocation", "size_validation", "fragmentation", "out_of_memory"]
+    memory_pool_free:
+      priority: 1
+      test_cases: 10
+      focus: ["memory_deallocation", "double_free_prevention", "invalid_pointer_detection"]
+    memory_pool_validate:
+      priority: 2
+      test_cases: 8
+      focus: ["integrity_checking", "corruption_detection", "consistency_validation"]
+    memory_pool_dump_stats:
+      priority: 3
+      test_cases: 4
+      focus: ["statistics_reporting", "format_correctness"]
+
+# Execution profile for complex project
+profiles:
+  complex_quick:
+    description: "Quick test generation for complex C project"
+    max_functions: 5
+    test_cases_per_function: 4
+    timeout: 600  # 10 minutes
+    
+  complex_comprehensive:
+    description: "Comprehensive test generation for complex C project"
+    max_functions: null  # No limit
+    test_cases_per_function: null  # Use function-specific settings
+    timeout: 3600  # 60 minutes
+    
+  complex_focused:
+    description: "Focused test generation on specific modules"
+    max_functions: 10
+    test_cases_per_function: 6
+    timeout: 1800  # 30 minutes
+    include_modules: ["linked_list", "hash_table"]  # Focus on these modules
+
+# Additional context for complex C testing
+context_enhancements:
+  data_structures:
+    - "linked_list"
+    - "hash_table"
+    - "memory_pool"
+  
+  testing_patterns:
+    - "memory_leak_detection"
+    - "boundary_value_analysis"
+    - "error_handling_validation"
+    - "concurrency_safety"
+    - "resource_cleanup"
+  
+  mock_strategies:
+    - "function_pointer_mocking"
+    - "memory_operation_mocking"
+    - "system_call_interception"
+    - "dependency_injection"

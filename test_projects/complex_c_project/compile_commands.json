@@ -1,0 +1,22 @@
+[
+{
+  "directory": "/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/build",
+  "command": "/usr/bin/cc  -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/data_structures -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/utils   -O2   -std=gnu11 -o CMakeFiles/complex_app.dir/main.c.o   -c /mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/main.c",
+  "file": "/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/main.c"
+},
+{
+  "directory": "/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/build",
+  "command": "/usr/bin/cc  -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/data_structures -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/utils   -O2   -std=gnu11 -o CMakeFiles/complex_app.dir/data_structures/linked_list.c.o   -c /mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/data_structures/linked_list.c",
+  "file": "/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/data_structures/linked_list.c"
+},
+{
+  "directory": "/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/build",
+  "command": "/usr/bin/cc  -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/data_structures -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/utils   -O2   -std=gnu11 -o CMakeFiles/complex_app.dir/data_structures/hash_table.c.o   -c /mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/data_structures/hash_table.c",
+  "file": "/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/data_structures/hash_table.c"
+},
+{
+  "directory": "/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/build",
+  "command": "/usr/bin/cc  -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/data_structures -I/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/utils   -O2   -std=gnu11 -o CMakeFiles/complex_app.dir/utils/memory_pool.c.o   -c /mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/utils/memory_pool.c",
+  "file": "/mnt/c/Users/chenmin/ai-dt/test_projects/complex_c_project/utils/memory_pool.c"
+}
+]
