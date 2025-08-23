@@ -83,11 +83,30 @@ ai-dt/
 
 ## Claude Code Integration Notes
 
-### libclang Configuration
+### libclang Configuration (IMPORTANT - Setup Required)
+
+**⚠️ CRITICAL SETUP STEP**: libclang configuration is required before using any clang functionality.
+
+#### Unified Configuration Approach (Recommended)
+```python
+# In any file that uses clang functionality:
+from src.utils.libclang_config import ensure_libclang_configured
+ensure_libclang_configured()  # Auto-discovers libclang library
+
+# Now safe to use clang functionality
+```
+
+#### Manual Configuration (Alternative)
 For Ubuntu with clang-10:
 ```python
 import clang.cindex
 clang.cindex.Config.set_library_file('/usr/lib/llvm-10/lib/libclang.so.1')
+```
+
+#### Environment Variable Approach
+```bash
+# Set environment variable
+export LIBCLANG_PATH=/usr/lib/llvm-10/lib/libclang.so.1
 ```
 
 ### DeepSeek API Setup

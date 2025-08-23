@@ -10,6 +10,10 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / 'src'))
 
+# Configure libclang using unified configuration
+from src.utils.libclang_config import ensure_libclang_configured
+ensure_libclang_configured()
+
 from src.parser.compilation_db import CompilationDatabaseParser
 from src.analyzer.function_analyzer import FunctionAnalyzer
 from src.generator.test_generator import TestGenerator
