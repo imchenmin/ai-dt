@@ -6,49 +6,15 @@ import clang.cindex
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
+from src.utils.libclang_config import ensure_libclang_configured
+
 
 class ClangAnalyzer:
     """C/C++ code analyzer using libclang AST parsing"""
     
     def __init__(self):
-        # Configure libclang - try to auto-discover library
-        self._configure_libclang()
-    
-    def _configure_libclang(self):
-        """Configure libclang library path"""
-        try:
-            import clang.cindex
-            
-            # Check if library is already configured
-            if clang.cindex.Config.library_file:
-                print(f"libclang library found: {clang.cindex.Config.library_file}")
-                return
-            
-            # Try to set library file from known path
-            lib_path = clang.cindex.Config.library_path
-            if lib_path:
-                # Look for libclang.so in the library path (Linux)
-                import os
-                libclang_path = os.path.join(lib_path, 'libclang.so.1')
-                if os.path.exists(libclang_path):
-                    clang.cindex.Config.set_library_file(libclang_path)
-                    print(f"Set libclang library to: {libclang_path}")
-                else:
-                    # Try alternative paths for Ubuntu
-                    ubuntu_paths = [
-                        '/usr/lib/llvm-10/lib/libclang.so.1',
-                        '/usr/lib/x86_64-linux-gnu/libclang-10.so.1'
-                    ]
-                    for path in ubuntu_paths:
-                        if os.path.exists(path):
-                            clang.cindex.Config.set_library_file(path)
-                            print(f"Set libclang library to: {path}")
-                            break
-                    else:
-                        print(f"libclang.so.1 not found in standard locations")
-            
-        except Exception as e:
-            print(f"Warning: Could not configure libclang: {e}")
+        # Configure libclang using unified configuration
+        ensure_libclang_configured()
     
     def analyze_file(self, file_path: str, compile_args: List[str]) -> List[Dict[str, Any]]:
         """Analyze a C/C++ file and extract function information"""
