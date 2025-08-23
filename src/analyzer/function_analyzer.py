@@ -9,6 +9,7 @@ from typing import List, Dict, Any
 
 from .clang_analyzer import ClangAnalyzer
 from .call_analyzer import CallAnalyzer
+import clang.cindex
 
 
 class FunctionAnalyzer:
@@ -59,6 +60,7 @@ class FunctionAnalyzer:
                                  compilation_units: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Analyze function context including dependencies and usage"""
         function_name = function_info['name']
+        file_path = function_info['file']
         
         # Find call sites across the project
         call_sites = self.call_analyzer.find_call_sites(function_name, compilation_units)
@@ -75,11 +77,55 @@ class FunctionAnalyzer:
                 seen_call_contexts.add(context_id)
                 analyzed_call_sites.append(analyzed_context)
         
-        # TODO: Add dependency analysis from clang_analyzer
+        # Analyze function dependencies using clang
+        dependencies = self._analyze_function_dependencies(function_info, compile_args)
+        
+        # Get compilation flags for this specific file
+        compilation_flags = self._get_compilation_flags(file_path, compilation_units)
         
         return {
-            'called_functions': [],
-            'macros_used': [],
-            'data_structures': [],
-            'call_sites': analyzed_call_sites
+            'called_functions': dependencies.get('called_functions', []),
+            'macros_used': dependencies.get('macros_used', []),
+            'data_structures': dependencies.get('data_structures', []),
+            'include_directives': dependencies.get('include_directives', []),
+            'call_sites': analyzed_call_sites,
+            'compilation_flags': compilation_flags
         }
+    
+    def _analyze_function_dependencies(self, function_info: Dict[str, Any], compile_args: List[str]) -> Dict[str, Any]:
+        """Analyze function dependencies using clang"""
+        file_path = function_info['file']
+        function_name = function_info['name']
+        
+        try:
+            # Parse the file to get the specific function cursor
+            index = clang.cindex.Index.create()
+            translation_unit = index.parse(file_path, args=compile_args)
+            
+            if translation_unit is None:
+                return {}
+            
+            # Find the specific function cursor
+            target_cursor = None
+            for cursor in translation_unit.cursor.get_children():
+                if (cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL and 
+                    cursor.spelling == function_name and cursor.is_definition()):
+                    target_cursor = cursor
+                    break
+            
+            if target_cursor:
+                return self.clang_analyzer.get_function_dependencies(
+                    target_cursor, file_path, compile_args
+                )
+            
+        except Exception as e:
+            print(f"Error analyzing dependencies for {function_name}: {e}")
+        
+        return {}
+    
+    def _get_compilation_flags(self, file_path: str, compilation_units: List[Dict[str, Any]]) -> List[str]:
+        """Get compilation flags for a specific file"""
+        for unit in compilation_units:
+            if unit['file'] == file_path:
+                return unit.get('arguments', [])
+        return []

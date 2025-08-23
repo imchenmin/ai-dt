@@ -61,7 +61,7 @@ ai-dt/
 ## Validation Status
 
 ### ✅ Verified Features
-- **libclang Integration**: Successfully parses C/C++ AST
+- **libclang Integration**: Successfully parses C/C++ AST (supports clang-10)
 - **Function Signature Extraction**: Correctly extracts return types and parameters
 - **Function Body Extraction**: Extracts complete function implementation code
 - **Testable Function Identification**: 
@@ -71,7 +71,7 @@ ai-dt/
 - **Compile Commands Processing**: Handles compile_commands.json with relative paths
 - **LLM Integration**: Complete OpenAI and DeepSeek API support
   - OpenAI: GPT-3.5-turbo, GPT-4 models
-  - DeepSeek: deepseek-chat, deepseek-coder models
+  - DeepSeek: deepseek-chat, deepseek-coder models (tested and working)
   - Multi-provider configuration management
   - Context compression for token optimization
 
@@ -80,6 +80,25 @@ ai-dt/
 - Better handling of complex template types
 - Enhanced error handling for different LLM providers
 - Batch processing optimization for large codebases
+
+## Claude Code Integration Notes
+
+### libclang Configuration
+For Ubuntu with clang-10:
+```python
+import clang.cindex
+clang.cindex.Config.set_library_file('/usr/lib/llvm-10/lib/libclang.so.1')
+```
+
+### DeepSeek API Setup
+- Set `DEEPSEEK_API_KEY` in environment or `.env` file
+- Tested and verified working with both deepseek-chat and deepseek-coder models
+- Generated tests saved in `generated_tests_deepseek_*/` directories
+
+### Quick Test Generation
+```bash
+DEEPSEEK_API_KEY="your_key" python demo_deepseek_integration.py
+```
 
 ## Important Patterns
 

@@ -24,7 +24,7 @@ Create a `.env` file in the project root:
 # OpenAI API (optional)
 OPENAI_API_KEY=your_openai_api_key_here
 
-# DeepSeek API (recommended)
+# DeepSeek API (recommended) - Tested and working
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
 
 # Anthropic API (future support)
@@ -33,6 +33,9 @@ ANTHROPIC_API_KEY=your_anthropic_api_key_here
 # Project configuration
 PROJECT_ROOT=./test_projects/c
 COMPILE_COMMANDS=compile_commands.json
+
+# LLM Provider Selection (optional)
+LLM_PROVIDER=deepseek  # deepseek, openai, anthropic, or mock
 ```
 
 Or set environment variables directly:
@@ -44,6 +47,15 @@ set OPENAI_API_KEY=your_openai_api_key_here
 # Linux/Mac
 export DEEPSEEK_API_KEY=your_deepseek_api_key_here
 export OPENAI_API_KEY=your_openai_api_key_here
+```
+
+### libclang Setup (Ubuntu clang-10)
+```bash
+# Install clang-10 development package
+sudo apt install -y libclang-10-dev clang-10
+
+# Configure Python clang bindings
+python -c "import clang.cindex; clang.cindex.Config.set_library_file('/usr/lib/llvm-10/lib/libclang.so.1')"
 ```
 
 ## 🚀 Available Scripts

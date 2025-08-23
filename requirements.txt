@@ -1,7 +1,6 @@
 clang==14.0.0
 libclang==16.0.6
 tree-sitter==0.20.2
-google-test-generator==1.0.0
 pyyaml==6.0.1
 jsonschema==4.20.0
 requests==2.31.0

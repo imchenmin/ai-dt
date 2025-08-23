@@ -177,17 +177,20 @@ class ClangAnalyzer:
         called_functions = []
         macros_used = []
         data_structures = []
+        include_directives = []
         
         # Analyze function body for dependencies
-        self._analyze_dependencies(cursor, called_functions, macros_used, data_structures)
+        self._analyze_dependencies(cursor, called_functions, macros_used, data_structures, include_directives)
         
         return {
             'called_functions': called_functions,
             'macros_used': macros_used,
-            'data_structures': data_structures
+            'data_structures': data_structures,
+            'include_directives': include_directives
         }
     
-    def _analyze_dependencies(self, cursor, called_functions: List, macros_used: List, data_structures: List):
+    def _analyze_dependencies(self, cursor, called_functions: List, macros_used: List, 
+                            data_structures: List, include_directives: List):
         """Recursively analyze AST for dependencies"""
         # Check if this is a function call
         if cursor.kind == clang.cindex.CursorKind.CALL_EXPR:
@@ -195,7 +198,8 @@ class ClangAnalyzer:
             if called_func and called_func.kind == clang.cindex.CursorKind.FUNCTION_DECL:
                 func_info = {
                     'name': called_func.spelling,
-                    'location': f"{called_func.location.file}:{called_func.location.line}"
+                    'location': f"{called_func.location.file.name if called_func.location.file else 'unknown'}:{called_func.location.line}",
+                    'return_type': called_func.result_type.spelling if called_func.result_type else 'unknown'
                 }
                 if func_info not in called_functions:
                     called_functions.append(func_info)
@@ -207,11 +211,19 @@ class ClangAnalyzer:
                 macros_used.append(macro_name)
         
         # Check for data structure usage (struct/class types)
-        elif cursor.kind in [clang.cindex.CursorKind.STRUCT_DECL, clang.cindex.CursorKind.CLASS_DECL]:
-            struct_name = cursor.spelling
-            if struct_name and struct_name not in data_structures:
-                data_structures.append(struct_name)
+        elif cursor.kind in [clang.cindex.CursorKind.STRUCT_DECL, clang.cindex.CursorKind.CLASS_DECL,
+                           clang.cindex.CursorKind.TYPE_REF, clang.cindex.CursorKind.TYPEDEF_DECL]:
+            type_name = cursor.spelling or cursor.type.spelling
+            if type_name and type_name not in data_structures:
+                data_structures.append(type_name)
+        
+        # Check for include directives
+        elif cursor.kind == clang.cindex.CursorKind.INCLUSION_DIRECTIVE:
+            included_file = cursor.spelling
+            if included_file and included_file not in include_directives:
+                include_directives.append(included_file)
         
         # Recursively process children
         for child in cursor.get_children():
-            self._analyze_dependencies(child, called_functions, macros_used, data_structures)
+            self._analyze_dependencies(child, called_functions, macros_used, 
+                                     data_structures, include_directives)

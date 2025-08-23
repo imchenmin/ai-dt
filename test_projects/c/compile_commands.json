@@ -1,12 +1,12 @@
 [
-  {
-    "directory": "C:\\Users\\chenmin\\ai-dt\\test_projects\\c",
-    "command": "gcc -IC:\\Users\\chenmin\\ai-dt\\test_projects\\c -std=gnu11 -c main.c -o main.o",
-    "file": "main.c"
-  },
-  {
-    "directory": "C:\\Users\\chenmin\\ai-dt\\test_projects\\c",
-    "command": "gcc -IC:\\Users\\chenmin\\ai-dt\\test_projects\\c -std=gnu11 -c math_utils.c -o math_utils.o",
-    "file": "math_utils.c"
-  }
+{
+  "directory": "/mnt/c/Users/chenmin/ai-dt/test_projects/c/build",
+  "command": "/usr/bin/cc  -I/mnt/c/Users/chenmin/ai-dt/test_projects/c    -std=gnu11 -o CMakeFiles/math_demo.dir/main.c.o   -c /mnt/c/Users/chenmin/ai-dt/test_projects/c/main.c",
+  "file": "/mnt/c/Users/chenmin/ai-dt/test_projects/c/main.c"
+},
+{
+  "directory": "/mnt/c/Users/chenmin/ai-dt/test_projects/c/build",
+  "command": "/usr/bin/cc  -I/mnt/c/Users/chenmin/ai-dt/test_projects/c    -std=gnu11 -o CMakeFiles/math_demo.dir/math_utils.c.o   -c /mnt/c/Users/chenmin/ai-dt/test_projects/c/math_utils.c",
+  "file": "/mnt/c/Users/chenmin/ai-dt/test_projects/c/math_utils.c"
+}
 ]
