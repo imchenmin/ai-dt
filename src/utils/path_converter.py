@@ -6,6 +6,9 @@ import json
 import re
 from pathlib import Path
 from typing import Dict, Any, List
+from src.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class WSLPathConverter:
@@ -72,7 +75,7 @@ class WSLPathConverter:
         input_path_obj = Path(input_path)
         
         if not input_path_obj.exists():
-            print(f"Input file not found: {input_path}")
+            logger.error(f"Input file not found: {input_path}")
             return False
         
         # Read the WSL compile_commands.json
@@ -90,5 +93,5 @@ class WSLPathConverter:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(windows_commands, f, indent=2)
         
-        print(f"Converted compile_commands.json saved to: {output_path}")
+        logger.info(f"Converted compile_commands.json saved to: {output_path}")
         return True

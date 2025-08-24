@@ -9,7 +9,10 @@ from typing import List, Dict, Any
 
 from .clang_analyzer import ClangAnalyzer
 from .call_analyzer import CallAnalyzer
+from src.utils.logging_utils import get_logger
 import clang.cindex
+
+logger = get_logger(__name__)
 
 
 class FunctionAnalyzer:
@@ -119,7 +122,7 @@ class FunctionAnalyzer:
                 )
             
         except Exception as e:
-            print(f"Error analyzing dependencies for {function_name}: {e}")
+            logger.error(f"Error analyzing dependencies for {function_name}: {e}")
         
         return {}
     

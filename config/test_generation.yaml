@@ -48,7 +48,7 @@ projects:
       skip_compiler_builtins: true
       skip_operators: true
       skip_special_functions: true
-      custom_include_patterns: []
+      custom_include_patterns: ["hash_table_get"]
       custom_exclude_patterns: []
 
 # LLM provider configurations

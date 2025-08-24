@@ -17,9 +17,11 @@ from src.analyzer.function_analyzer import FunctionAnalyzer
 from src.generator.test_generator import TestGenerator
 from src.utils.libclang_config import ensure_libclang_configured
 from src.utils.config_loader import ConfigLoader
+from src.utils.logging_utils import setup_logging, get_logger, log_generation_stats, close_logging
 
+# Setup basic logging initially
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def generate_output_directory(project_path: str, base_output_dir: str = "./experiment/generated_tests") -> str:
@@ -191,6 +193,8 @@ def generate_tests_with_config(functions_with_context: List[Dict[str, Any]],
                               project_config: Dict[str, Any],
                               prompt_only: bool = False) -> List[Dict[str, Any]]:
     """Generate tests using configured LLM provider"""
+    start_time = datetime.datetime.now()
+    
     llm_provider = project_config.get('llm_provider', 'deepseek')
     model = project_config.get('model', 'deepseek-coder')
     base_output_dir = project_config.get('output_dir', './experiment/generated_tests')
@@ -198,6 +202,9 @@ def generate_tests_with_config(functions_with_context: List[Dict[str, Any]],
     # Generate output directory based on project name and timestamp
     project_path = project_config['path']
     output_dir = generate_output_directory(project_path, base_output_dir)
+    
+    # Setup enhanced logging with file output to experiment directory
+    setup_logging(output_dir=output_dir, log_level=logging.INFO)
     
     # In prompt-only mode, we don't need a real API key and will use the mock client.
     if not prompt_only:
@@ -231,6 +238,14 @@ def generate_tests_with_config(functions_with_context: List[Dict[str, Any]],
         project_name=project_name
     )
     
+    # Log generation statistics
+    successful = len([r for r in results if r['success']])
+    failed = len([r for r in results if not r['success']])
+    log_generation_stats(start_time, len(functions_with_context), successful, failed)
+    
+    # Close file handlers
+    close_logging()
+    
     return results
 
 
@@ -258,10 +273,15 @@ def print_results(results: List[Dict[str, Any]], project_config: Dict[str, Any])
 
 def generate_tests_simple_mode(project_path: str, output_dir: str, compile_commands: str):
     """Simple mode: generate tests without configuration"""
-    logger.info("Running in simple mode...")
+    start_time = datetime.datetime.now()
     
     # Generate output directory based on project name and timestamp
     auto_output_dir = generate_output_directory(project_path, output_dir)
+    
+    # Setup enhanced logging with file output to experiment directory
+    setup_logging(output_dir=auto_output_dir, log_level=logging.INFO)
+    
+    logger.info("Running in simple mode...")
     
     # Configure libclang
     ensure_libclang_configured()
@@ -287,6 +307,9 @@ def generate_tests_simple_mode(project_path: str, output_dir: str, compile_comma
     
     # Generate tests
     test_generator = TestGenerator()
+    successful = 0
+    failed = 0
+    
     for function in testable_functions:
         test_result = test_generator.generate_test(function, function['context'])
         
@@ -295,8 +318,16 @@ def generate_tests_simple_mode(project_path: str, output_dir: str, compile_comma
             output_path = Path(auto_output_dir) / f"test_{function['name']}.cpp"
             output_path.write_text(test_result['test_code'])
             logger.info(f"Generated test for {function['name']} at {output_path}")
+            successful += 1
         else:
             logger.error(f"Failed to generate test for {function['name']}: {test_result['error']}")
+            failed += 1
+    
+    # Log generation statistics
+    log_generation_stats(start_time, len(testable_functions), successful, failed)
+    
+    # Close file handlers
+    close_logging()
 
 
 def main():

@@ -5,6 +5,9 @@ Call site analyzer for finding where functions are called
 import os
 from pathlib import Path
 from typing import List, Dict, Any
+from src.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class CallAnalyzer:
@@ -63,7 +66,7 @@ class CallAnalyzer:
                     })
                     
         except Exception as e:
-            print(f"Error analyzing calls in {file_path}: {e}")
+            logger.error(f"Error analyzing calls in {file_path}: {e}")
         
         return calls
     
@@ -99,5 +102,5 @@ class CallAnalyzer:
             }
             
         except Exception as e:
-            print(f"Error analyzing call context: {e}")
+            logger.error(f"Error analyzing call context: {e}")
             return call_site

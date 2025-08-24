@@ -7,6 +7,9 @@ import subprocess
 import os
 from pathlib import Path
 from typing import List, Dict, Any
+from src.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class CompileDBGenerator:
@@ -32,14 +35,14 @@ class CompileDBGenerator:
                     # Move to project root
                     target_path = self.project_root / "compile_commands.json"
                     compile_commands_path.rename(target_path)
-                    print(f"Generated compile_commands.json at {target_path}")
+                    logger.info(f"Generated compile_commands.json at {target_path}")
                     return True
             
-            print(f"CMake failed: {result.stderr}")
+            logger.error(f"CMake failed: {result.stderr}")
             return False
             
         except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
-            print(f"CMake generation failed: {e}")
+            logger.error(f"CMake generation failed: {e}")
             return False
     
     def generate_with_bear(self, build_command: List[str]) -> bool:
@@ -53,14 +56,14 @@ class CompileDBGenerator:
             if result.returncode == 0:
                 compile_commands_path = self.project_root / "compile_commands.json"
                 if compile_commands_path.exists():
-                    print(f"Generated compile_commands.json with bear")
+                    logger.info(f"Generated compile_commands.json with bear")
                     return True
             
-            print(f"Bear failed: {result.stderr}")
+            logger.error(f"Bear failed: {result.stderr}")
             return False
             
         except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
-            print(f"Bear generation failed: {e}")
+            logger.error(f"Bear generation failed: {e}")
             return False
     
     def generate_simple_compile_db(self, source_files: List[str]) -> bool:
@@ -93,7 +96,7 @@ class CompileDBGenerator:
             output_path = self.project_root / "compile_commands.json"
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(compile_commands, f, indent=2)
-            print(f"Generated simple compile_commands.json with {len(compile_commands)} entries")
+            logger.info(f"Generated simple compile_commands.json with {len(compile_commands)} entries")
             return True
         
         return False
@@ -127,5 +130,5 @@ class CompileDBGenerator:
         if source_files:
             return self.generate_simple_compile_db(source_files)
         
-        print("No source files found for compile_commands.json generation")
+        logger.warning("No source files found for compile_commands.json generation")
         return False

@@ -10,9 +10,10 @@ from datetime import datetime
 
 from src.utils.context_compressor import ContextCompressor
 from src.utils.file_organizer import TestFileOrganizer
+from src.utils.logging_utils import get_logger
 from .llm_client import LLMClient, MockLLMClient
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class TestGenerator:

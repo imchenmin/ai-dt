@@ -12,7 +12,7 @@ class PromptTemplates:
     
     # System prompts for different languages
     SYSTEM_PROMPTS = {
-        'c': "你是一个专业的C语言单元测试工程师，专门生成Google Test测试用例。",
+        'c': "你是一个专业的C语言单元测试工程师，专门生成Google Test + MockCpp测试用例。",
         'cpp': "你是一个专业的C++单元测试工程师，专门生成Google Test + MockCpp测试用例。",
         'default': "你是一个专业的C/C++单元测试工程师，专门生成Google Test + MockCpp测试用例。"
     }
@@ -83,12 +83,32 @@ class PromptTemplates:
                 declaration = func.get('declaration', f"{func['name']} (...)")
                 prompt_parts.append(f"    *   `{declaration}` - **{mock_status}**")
 
+        # Add MockCpp guidance - use MOCKER method for both C and C++
+        mockcpp_guidance = [
+            "3.  **MockCpp使用指导:",
+            f"    *   **语言类型:** {language_display}项目",
+            "    *   **Mocking方法:** 统一使用 `MOCKER(function_name)` 进行函数Mock",
+            "    *   **关键步骤:",
+            "        - 使用 `MOCKER(function_name)` 创建函数Mock",
+            "        - 使用 `.stubs()` 设置默认返回值",
+            "        - 使用 `.expects(...).returns(...)` 设置期望返回值",
+            "        - 使用 `.expects(...).throws(...)` 设置期望抛出异常",
+            "        - 使用 `MOCK_CPP::Verify()` 验证所有Mock调用",
+            "    *   **注意事项:",
+            "        - MockCpp支持C函数和C++自由函数的Mocking",
+            "        - 避免Mock标准库函数和系统调用",
+            "        - 优先Mock自定义的辅助函数和工具函数",
+            "        - 对于C++类成员函数，可以使用MOCKER但需要特殊处理"
+        ]
+        
+
+        prompt_parts.extend(mockcpp_guidance)
         prompt_parts.extend([
-            "3.  **核心测试场景:",
+            "4.  **核心测试场景:",
             "    *   **正常流程:** 测试函数在典型、有效输入下的行为。",
             "    *   **边界条件:** 测试极限值、空值或特殊值（如0, -1）作为输入。",
             "    *   **异常/错误处理:** 如果适用，测试函数在接收到无效输入或依赖项失败时的错误处理逻辑。",
-            "4.  **断言要求:",
+            "5.  **断言要求:",
             "    *   使用 Google Test 提供的断言宏（如 `EXPECT_EQ`, `ASSERT_TRUE`）来验证结果。",
             "    *   如果使用了 Mock，请使用 `EXPECT_CALL` 来验证与依赖项的交互。",
             "",

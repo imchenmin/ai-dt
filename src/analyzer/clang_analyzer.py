@@ -7,6 +7,9 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from src.utils.libclang_config import ensure_libclang_configured
+from src.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class ClangAnalyzer:
@@ -20,10 +23,10 @@ class ClangAnalyzer:
         """Analyze a C/C++ file and extract function information"""
         path = Path(file_path)
         if not path.exists():
-            print(f"File not found: {file_path}")
+            logger.error(f"File not found: {file_path}")
             return []
         
-        print(f"Analyzing {file_path} with args: {compile_args}")
+        logger.info(f"Analyzing {file_path} with args: {compile_args}")
         
         index = clang.cindex.Index.create()
         
@@ -32,7 +35,7 @@ class ClangAnalyzer:
             translation_unit = index.parse(file_path, args=compile_args, options=clang.cindex.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
             
             if translation_unit is None:
-                print(f"Failed to parse {file_path}")
+                logger.error(f"Failed to parse {file_path}")
                 return []
             
             functions = []
@@ -44,13 +47,13 @@ class ClangAnalyzer:
                 self.function_definition_map = {}
             self.function_definition_map.update(function_definitions)
 
-            print(f"Found {len(functions)} functions in {file_path}")
+            logger.info(f"Found {len(functions)} functions in {file_path}")
             return functions
             
         except Exception as e:
-            print(f"Error analyzing {file_path}: {e}")
+            logger.error(f"Error analyzing {file_path}: {e}")
             import traceback
-            traceback.print_exc()
+            logger.error(traceback.format_exc())
             return []
     
     def _extract_functions(self, cursor, functions: List[Dict[str, Any]], function_definitions: Dict[str, Any], file_path: str):
@@ -118,7 +121,7 @@ class ClangAnalyzer:
             }
             
         except Exception as e:
-            print(f"Error extracting function info: {e}")
+            logger.error(f"Error extracting function info: {e}")
             return None
     
     def _extract_function_body(self, cursor) -> str:
@@ -143,7 +146,7 @@ class ClangAnalyzer:
             
             return ""
         except Exception as e:
-            print(f"Error extracting function body: {e}")
+            logger.error(f"Error extracting function body: {e}")
             return ""
     
     def _get_access_specifier(self, cursor) -> str:
@@ -313,7 +316,7 @@ class ClangAnalyzer:
             }
             
         except Exception as e:
-            print(f"Error extracting macro definition: {e}")
+            logger.error(f"Error extracting macro definition: {e}")
             return None
     
     def _get_macro_definitions(self, macro_names: List[str], file_path: str, compile_args: List[str]) -> List[Dict[str, Any]]:
@@ -345,5 +348,5 @@ class ClangAnalyzer:
             return macro_definitions
             
         except Exception as e:
-            print(f"Error getting macro definitions: {e}")
+            logger.error(f"Error getting macro definitions: {e}")
             return []

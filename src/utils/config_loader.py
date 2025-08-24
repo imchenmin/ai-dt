@@ -4,6 +4,9 @@ Configuration loader for LLM providers
 
 import os
 from typing import Dict, Any, Optional
+from src.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class ConfigLoader:
@@ -58,8 +61,8 @@ class ConfigLoader:
     @staticmethod
     def print_provider_status():
         """Print status of all LLM providers"""
-        print("LLM Provider Status:")
-        print("=" * 40)
+        logger.info("LLM Provider Status:")
+        logger.info("=" * 40)
         
         providers = ConfigLoader.get_available_providers()
         
@@ -67,18 +70,18 @@ class ConfigLoader:
             status = "✅ Available" if available else "❌ Not configured"
             config = ConfigLoader.get_llm_config(provider)
             
-            print(f"{provider.upper()}:")
-            print(f"  Status: {status}")
-            print(f"  API Key Env: {config['api_key_env']}")
-            print(f"  Default Model: {config['default_model']}")
-            print(f"  Available Models: {', '.join(config['models'])}")
-            print()
+            logger.info(f"{provider.upper()}:")
+            logger.info(f"  Status: {status}")
+            logger.info(f"  API Key Env: {config['api_key_env']}")
+            logger.info(f"  Default Model: {config['default_model']}")
+            logger.info(f"  Available Models: {', '.join(config['models'])}")
+            logger.info("")
         
         if not any(providers.values()):
-            print("No LLM providers configured. Set API keys for:")
-            print("  - OPENAI_API_KEY for OpenAI")
-            print("  - DEEPSEEK_API_KEY for DeepSeek") 
-            print("  - ANTHROPIC_API_KEY for Anthropic")
+            logger.info("No LLM providers configured. Set API keys for:")
+            logger.info("  - OPENAI_API_KEY for OpenAI")
+            logger.info("  - DEEPSEEK_API_KEY for DeepSeek") 
+            logger.info("  - ANTHROPIC_API_KEY for Anthropic")
 
 
 # Example usage

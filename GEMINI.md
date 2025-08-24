@@ -81,3 +81,24 @@ The `main.py` script serves as the primary entry point and orchestrator for the 
 *   **`print_results(...)`**: A utility function to display a summary of the test generation results, including successful and failed generations.
 
 *   **`generate_output_directory(...)`**: A helper function that creates a unique, timestamped output directory for each test generation run, ensuring that results from different runs are kept separate.
+
+# Roadmap
+
+Here are the planned enhancements for the C/C++ unit test generation tool:
+
+1.  **Enhanced Logging System:**
+    *   Implement a robust logging system that includes timestamps for all log entries.
+    *   Save a copy of the log file to the corresponding run directory within `experiment/` for better traceability and debugging.
+
+2.  **Improved Prompt Engineering for C Projects:**
+    *   The current prompt templates incorrectly suggest `gmock` for pure C projects.
+    *   Research and document the correct usage of `MockCpp` for mocking in C.
+    *   Update the prompt generation logic to provide accurate and helpful `MockCpp` instructions for C language test generation.
+
+3.  **Parallelization and Asynchronous Workflow:**
+    *   Refactor the test generation process to handle multiple functions concurrently, improving overall performance.
+    *   Modify the workflow to first generate and save all necessary prompt files in a batch, before sending any requests to the LLM.
+
+4.  **Progress Tracking and Performance Metrics:**
+    *   Implement a progress indicator to provide real-time feedback during the test generation process.
+    *   Calculate and display key metrics, such as the generation rate (e.g., functions per minute) and estimated time to completion.

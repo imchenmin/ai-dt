@@ -7,6 +7,9 @@ import os
 import clang.cindex
 from pathlib import Path
 from typing import Optional
+from src.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class LibclangConfig:
@@ -31,14 +34,14 @@ class LibclangConfig:
         try:
             # Check if already configured
             if clang.cindex.Config.library_file:
-                print(f"libclang already configured: {clang.cindex.Config.library_file}")
+                logger.info(f"libclang already configured: {clang.cindex.Config.library_file}")
                 cls._configured = True
                 return True
                 
             # Try explicit path first
             if libclang_path and os.path.exists(libclang_path):
                 clang.cindex.Config.set_library_file(libclang_path)
-                print(f"Set libclang library to: {libclang_path}")
+                logger.info(f"Set libclang library to: {libclang_path}")
                 cls._configured = True
                 return True
                 
@@ -46,7 +49,7 @@ class LibclangConfig:
             env_path = os.environ.get('LIBCLANG_PATH')
             if env_path and os.path.exists(env_path):
                 clang.cindex.Config.set_library_file(env_path)
-                print(f"Set libclang library from environment: {env_path}")
+                logger.info(f"Set libclang library from environment: {env_path}")
                 cls._configured = True
                 return True
                 
@@ -66,7 +69,7 @@ class LibclangConfig:
             for path in common_paths:
                 if os.path.exists(path):
                     clang.cindex.Config.set_library_file(path)
-                    print(f"Auto-discovered libclang at: {path}")
+                    logger.info(f"Auto-discovered libclang at: {path}")
                     cls._configured = True
                     return True
             
@@ -82,15 +85,15 @@ class LibclangConfig:
                 for path in potential_paths:
                     if os.path.exists(path):
                         clang.cindex.Config.set_library_file(path)
-                        print(f"Found libclang in library path: {path}")
+                        logger.info(f"Found libclang in library path: {path}")
                         cls._configured = True
                         return True
             
-            print("Warning: Could not auto-discover libclang library")
+            logger.warning("Could not auto-discover libclang library")
             return False
             
         except Exception as e:
-            print(f"Error configuring libclang: {e}")
+            logger.error(f"Error configuring libclang: {e}")
             return False
     
     @classmethod

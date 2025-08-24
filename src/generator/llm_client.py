@@ -9,6 +9,9 @@ from typing import Dict, Any, Optional
 import time
 from pathlib import Path
 from openai import OpenAI
+from src.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class LLMClient:
@@ -239,8 +242,8 @@ class MockLLMClient:
     
     def _generate_mock_test_code(self, function_name: str, prompt: str) -> str:
         """Generate realistic mock test code"""
-        # Debug: print what function name we received
-        print(f"DEBUG: Generating test for function: '{function_name}'")
+        # Debug: log what function name we received
+        logger.debug(f"Generating test for function: '{function_name}'")
         
         if "divide" in function_name.lower():
             return self._generate_divide_test()
