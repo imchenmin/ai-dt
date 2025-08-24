@@ -31,6 +31,11 @@ Thumbs.db
 htmlcov/
 .pytest_cache/
 
+# Generated test directories
+generated_tests/
+experiment/generated_tests_*/
+experiment/generated_tests/*/
+
 # Temporary files
 *.tmp
 *.temp

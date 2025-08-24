@@ -19,7 +19,25 @@ Since this is a new Python project, typical development commands will include:
 - `python -m venv venv` - Create virtual environment
 - `pip install -r requirements.txt` - Install dependencies
 - `python -m pytest tests/` - Run tests
-- `python src/main.py` - Run the main application
+- `python src/main.py` - Unified test generation interface
+
+### Unified Test Generation Interface
+
+The main application now provides a unified interface for all test generation scenarios:
+
+```bash
+# Simple mode - direct project specification
+python src/main.py --simple --project test_projects/c --output ./experiment/generated_tests
+
+# Configuration mode - use project from config
+python src/main.py --config simple_c
+
+# List available projects from configuration
+python src/main.py --list-projects
+
+# Use custom configuration file
+python src/main.py --config complex_example --config-file config/custom_config.yaml
+```
 
 ## Code Structure (Current)
 
@@ -67,7 +85,12 @@ ai-dt/
 │       │   └── memory_pool.c
 │       ├── main.c
 │       └── compile_commands.json
-├── generated_tests_complex_c/  # Generated test files for complex project
+├── experiment/                # Experimental test generation results
+│   ├── generated_tests/            # Auto-generated test directories with timestamps
+│   │   └── {project_name}_{timestamp}/  # Format: c_20240824_092434/
+│   ├── generated_tests_complex_c/  # Generated test files for complex project
+│   ├── generated_tests_deepseek/   # DeepSeek generated tests
+│   └── generated_tests_demo/       # Demo generated tests
 ├── docs/                # Documentation
 ├── requirements.txt     # Python dependencies
 └── requirements.md      # Requirements documentation
@@ -146,7 +169,7 @@ export LIBCLANG_PATH=/usr/lib/llvm-10/lib/libclang.so.1
 ### DeepSeek API Setup
 - Set `DEEPSEEK_API_KEY` in environment or `.env` file
 - Tested and verified working with both deepseek-chat and deepseek-coder models
-- Generated tests saved in `generated_tests_deepseek_*/` directories
+- Generated tests saved in `experiment/generated_tests_deepseek_*/` directories
 - **Proxy Configuration Note**: If encountering proxy issues, clear malformed proxy environment variables:
   ```bash
   unset https_proxy http_proxy all_proxy
@@ -154,15 +177,34 @@ export LIBCLANG_PATH=/usr/lib/llvm-10/lib/libclang.so.1
 
 ### Quick Test Generation
 ```bash
-# Simple project test generation
-DEEPSEEK_API_KEY="your_key" python demo_deepseek_integration.py
+# Simple project test generation (using unified interface)
+DEEPSEEK_API_KEY="your_key" python src/main.py --config simple_c
 
 # Complex project test generation
-DEEPSEEK_API_KEY="your_key" python scripts/demo_complex_c_integration.py
+DEEPSEEK_API_KEY="your_key" python src/main.py --config complex_example
 
-# Batch processing for large projects
-DEEPSEEK_API_KEY="your_key" python scripts/batch_test_generation.py
+# Direct project specification (without config)
+python src/main.py --simple --project test_projects/c --output ./experiment/generated_tests
+
+# List available projects
+python src/main.py --list-projects
 ```
+
+### Test Directory Organization
+
+All generated test directories are now organized under the `experiment/` directory. New test generations should follow a timestamp-based naming convention:
+
+```bash
+# Example of timestamp-based test directory naming
+experiment/generated_tests/c_20240824_092434/  # project_timestamp format
+experiment/generated_tests_complex_c/complex_c_20240824_150045/
+```
+
+This organization helps:
+- Keep the root directory clean
+- Provide clear versioning of test generation experiments
+- Enable easy comparison between different test generation runs
+- Maintain historical test generation results for analysis
 
 ## Complex C Project Details
 
@@ -199,6 +241,19 @@ The complex C project located in `test_projects/complex_c_project/` demonstrates
 - **Traceability**: Include timestamps, source version, and model parameters in generated tests
 - **Batch processing**: Automated generation for large codebases with rate limiting
 - **Error resilience**: Fallback to mock tests when LLM generation fails
+
+## Code Cleanup and Refactoring
+
+### ✅ Completed Refactoring
+- **Unified Interface**: All test generation functionality consolidated into `src/main.py`
+- **Removed Redundancy**: Eliminated duplicate scripts (`generate_tests.py`, `run_test_generation.py`, `analyze_complex_project.py`, etc.)
+- **Clean Root Directory**: Reduced clutter by removing redundant Python scripts
+- **Consistent Architecture**: Single entry point with multiple operation modes
+
+### Operation Modes
+1. **Simple Mode**: Direct project specification without configuration
+2. **Configuration Mode**: Use pre-configured projects from YAML config
+3. **Project Listing**: Discover available configured projects
 
 ## Lessons Learned and Common Pitfalls
 

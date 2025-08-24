@@ -7,7 +7,7 @@ _default: &defaults
   model: "deepseek-coder"
   max_tokens: 3000  # Increased for complex functions
   temperature: 0.2  # Lower temperature for more deterministic output
-  output_dir: "./generated_tests_complex_c"
+  output_dir: "./experiment/generated_tests_complex_c"
   
   # Function filtering options
   filter:
@@ -25,7 +25,7 @@ complex_c_project:
   description: "Complex C project with data structures, algorithms, and memory management"
   
   # Use custom output directory
-  output_dir: "./generated_tests_complex_c"
+  output_dir: "./experiment/generated_tests_complex_c"
   
   # Function-specific settings for complex C project
   functions:

@@ -7,7 +7,7 @@ defaults:
   model: "deepseek-coder"
   max_tokens: 2500
   temperature: 0.3
-  output_dir: "./generated_tests"
+  output_dir: "./experiment/generated_tests"
   
   # Function filtering options
   filter:
