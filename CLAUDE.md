@@ -147,19 +147,20 @@ The complex C project in `test_projects/complex_c_project/` demonstrates:
 
 ### ✅ Completed Enhancements
 - **Enhanced Logging**: Added timestamp functionality and log saving to experiment directories
-- **MockCpp Guidance**: Fixed prompt templates to handle C vs C++ mocking requirements appropriately
+- **MockCpp Guidance**: Enhanced prompt templates with comprehensive MockCpp usage guidance for both C and C++ projects
 - **Batch Processing**: Implemented two-phase processing (prompt generation first, then LLM processing)
 - **Progress Tracking**: Added real-time progress, ETA, and generation statistics
-- **Language-Specific Mocking**: C projects no longer include MockCpp references, C++ projects use proper MockCpp guidance
+- **Language-Specific Mocking**: Unified MOCKER method for both C and C++ function mocking
+- **Logging System Refactor**: Replaced all print statements with enhanced logger throughout codebase
 
 ### 🚧 Pending Enhancements
-- **Enhanced Logging System**: Add timestamp support and save logs to experiment directories
-- **MockCpp Documentation**: Create comprehensive MockCpp usage guide for C++ projects and remove MockCpp references from C projects
 - **Batch Processing Optimization**: Implement concurrent processing with prompt-first generation approach
 - **Progress Statistics**: Add generation rate tracking and ETA estimation
 - **Concurrent Processing**: Support for parallel LLM requests to improve generation speed
 - **Enhanced Error Handling**: Better retry mechanisms and error recovery
 - **Log Analysis**: Automated log parsing and performance reporting
 - **Template Optimization**: Further refinement of prompt templates based on generation results
+- **Function Filtering UI**: Interactive function selection interface
+- **Test Quality Assessment**: Automated test quality scoring and validation
 
 - 每一次完成整个大的工作量并测试完成后，将工作日志写到 @docs/work_logs/ 中
