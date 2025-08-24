@@ -35,6 +35,22 @@ projects:
     # Custom output directory for this project
     output_dir: "./experiment/generated_tests_complex"
 
+  # Complex C project with data structures and algorithms
+  complex_c_project:
+    path: "test_projects/complex_c_project"
+    comp_db: "test_projects/complex_c_project/compile_commands.json"
+    description: "Complex C project with data structures, algorithms and memory utilities"
+    
+    # Custom output directory for this project
+    output_dir: "./experiment/generated_tests_complex_c"
+    filter:
+      skip_std_lib: true
+      skip_compiler_builtins: true
+      skip_operators: true
+      skip_special_functions: true
+      custom_include_patterns: []
+      custom_exclude_patterns: []
+
 # LLM provider configurations
 llm_providers:
   deepseek:

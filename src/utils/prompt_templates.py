@@ -65,7 +65,7 @@ class PromptTemplates:
         if deps.get('macro_definitions'):
             prompt_parts.append("*   **相关宏定义:**")
             for macro_def in deps['macro_definitions']:
-                prompt_parts.append(f"    *   `#define {macro_def['name']} {macro_def['definition']}`")
+                prompt_parts.append(f"    *   `#define {macro_def['name']} {macro_def.get('definition', '')}`")
 
         prompt_parts.extend([
             "*   **编译信息:**",
