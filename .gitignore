@@ -33,6 +33,8 @@ htmlcov/
 
 # Generated test directories
 generated_tests/
+generated_tests_*/
+generated_tests_complex/
 experiment/generated_tests_*/
 experiment/generated_tests/*/
 
