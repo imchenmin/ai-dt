@@ -56,11 +56,13 @@ class TestGenerator:
             logger.info(f"Generated prompt for {function_info['name']} "
                        f"({len(prompt)} characters)")
             
-            # Send to LLM
+            # Send to LLM with language information
+            language = function_info.get('language', 'c')
             result = self.llm_client.generate_test(
                 prompt=prompt,
                 max_tokens=2500,
-                temperature=0.3
+                temperature=0.3,
+                language=language
             )
             
             if result['success']:

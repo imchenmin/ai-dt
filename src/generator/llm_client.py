@@ -46,17 +46,17 @@ class LLMClient:
             self.client = None
     
     def generate_test(self, prompt: str, max_tokens: int = 2000, 
-                     temperature: float = 0.3) -> Dict[str, Any]:
+                     temperature: float = 0.3, language: str = "c") -> Dict[str, Any]:
         """Generate test code using LLM"""
         try:
             if self.provider == "openai":
-                return self._generate_with_openai(prompt, max_tokens, temperature)
+                return self._generate_with_openai(prompt, max_tokens, temperature, language)
             elif self.provider == "deepseek":
-                return self._generate_with_deepseek(prompt, max_tokens, temperature)
+                return self._generate_with_deepseek(prompt, max_tokens, temperature, language)
             elif self.provider == "anthropic":
-                return self._generate_with_anthropic(prompt, max_tokens, temperature)
+                return self._generate_with_anthropic(prompt, max_tokens, temperature, language)
             elif self.provider == "local":
-                return self._generate_with_local(prompt, max_tokens, temperature)
+                return self._generate_with_local(prompt, max_tokens, temperature, language)
             else:
                 raise ValueError(f"Unsupported provider: {self.provider}")
         
@@ -68,13 +68,16 @@ class LLMClient:
                 'usage': {}
             }
     
-    def _generate_with_openai(self, prompt: str, max_tokens: int, temperature: float) -> Dict[str, Any]:
+    def _generate_with_openai(self, prompt: str, max_tokens: int, temperature: float, language: str = "c") -> Dict[str, Any]:
         """Generate test using OpenAI API"""
         try:
+            from src.utils.prompt_templates import PromptTemplates
+            system_prompt = PromptTemplates.get_system_prompt(language)
+            
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "你是一个专业的C/C++单元测试工程师，专门生成Google Test + MockCpp测试用例。"},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=max_tokens,
@@ -114,14 +117,17 @@ class LLMClient:
                 'usage': {}
             }
     
-    def _generate_with_deepseek(self, prompt: str, max_tokens: int, temperature: float) -> Dict[str, Any]:
+    def _generate_with_deepseek(self, prompt: str, max_tokens: int, temperature: float, language: str = "c") -> Dict[str, Any]:
         """Generate test using DeepSeek API"""
         try:
+            from src.utils.prompt_templates import PromptTemplates
+            system_prompt = PromptTemplates.get_system_prompt(language)
+            
             # DeepSeek uses OpenAI-compatible API format
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "你是一个专业的C/C++单元测试工程师，专门生成Google Test + MockCpp测试用例。"},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=max_tokens,

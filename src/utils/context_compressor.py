@@ -3,6 +3,7 @@ Context compressor for LLM-friendly test generation
 """
 
 from typing import Dict, Any, List
+from .prompt_templates import PromptTemplates
 
 
 class ContextCompressor:
@@ -122,75 +123,12 @@ class ContextCompressor:
         return compressed_context
     
     def format_for_llm_prompt(self, compressed_context: Dict[str, Any]) -> str:
-        """Format compressed context for LLM prompt"""
+        """Format compressed context for LLM prompt using templates"""
         target = compressed_context['target_function']
-        deps = compressed_context['dependencies']
-        usage = compressed_context['usage_patterns']
-        comp = compressed_context['compilation_info']
         
-        prompt_parts = [
-            "# 目标函数信息",
-            f"函数签名: {target['signature']}",
-            f"返回类型: {target['return_type']}",
-            f"参数: {', '.join([p['type'] + ' ' + p['name'] for p in target['parameters']])}",
-            f"语言: {target['language'].upper()}",
-            f"静态函数: {'是' if target['is_static'] else '否'}",
-            f"访问权限: {target['access_specifier']}",
-            "",
-            "# 函数实现预览",
-            f"```{target['language']}",
-            target['body_preview'],
-            "```",
-            "",
-            "# 依赖分析",
-            f"调用的函数: {', '.join([f['name'] for f in deps['called_functions']]) or '无'}",
-            f"使用的宏: {', '.join(deps['macros']) or '无'}",
-            "",
-            "# 宏定义详情"
-        ]
+        # Use specialized template for memory functions
+        if PromptTemplates.should_use_memory_template(target):
+            return PromptTemplates.generate_memory_function_prompt(compressed_context)
         
-        # Add macro definitions if available
-        if deps.get('macro_definitions'):
-            for macro_def in deps['macro_definitions']:
-                prompt_parts.extend([
-                    f"宏 {macro_def['name']}:",
-                    f"定义: {macro_def['definition']}",
-                    f"位置: {macro_def['location']}",
-                    ""
-                ])
-        else:
-            prompt_parts.append("宏定义: 无详细定义信息")
-            
-        prompt_parts.extend([
-            f"关键数据结构: {', '.join(deps['data_structures']) or '无'}",
-            "",
-            "# 使用示例"
-        ])
-        
-        for i, site in enumerate(usage, 1):
-            prompt_parts.extend([
-                f"示例 {i} - {site['file']}:{site['line']}:",
-                f"```c",
-                site['context_preview'],
-                f"```",
-                ""
-            ])
-        
-        prompt_parts.extend([
-            "# 编译信息",
-            f"关键编译标志: {', '.join(comp['key_flags']) or '无'}",
-            f"总标志数量: {comp['total_flags_count']}",
-            "",
-            "# 测试生成要求",
-            "请基于以上信息生成Google Test + MockCpp测试用例，包含:",
-            "1. 完整的测试文件包含必要头文件",
-            "2. 使用Google Test断言",
-            "3. 为外部依赖函数生成Mock",
-            "4. 包含边界条件测试",
-            "5. 异常情况处理",
-            "6. 测试用例覆盖正常流程和边界情况",
-            "",
-            "生成的测试代码:"
-        ])
-        
-        return '\n'.join(prompt_parts)
+        # Use general template for other functions
+        return PromptTemplates.generate_test_prompt(compressed_context)
