@@ -19,24 +19,28 @@ Since this is a new Python project, typical development commands will include:
 - `python -m venv venv` - Create virtual environment
 - `pip install -r requirements.txt` - Install dependencies
 - `python -m pytest tests/` - Run tests
-- `python src/main.py` - Unified test generation interface
+- `python -m src.main` - Unified test generation interface (module execution)
+- `python src/main.py` - Alternative execution (requires proper PYTHONPATH setup)
 
 ### Unified Test Generation Interface
 
 The main application now provides a unified interface for all test generation scenarios:
 
 ```bash
-# Simple mode - direct project specification
-python src/main.py --simple --project test_projects/c --output ./experiment/generated_tests
+# Simple mode - direct project specification (recommended)
+python -m src.main --simple --project test_projects/c --output ./experiment/generated_tests
 
 # Configuration mode - use project from config
-python src/main.py --config simple_c
+python -m src.main --config simple_c
 
 # List available projects from configuration
-python src/main.py --list-projects
+python -m src.main --list-projects
 
 # Use custom configuration file
-python src/main.py --config complex_example --config-file config/custom_config.yaml
+python -m src.main --config complex_example --config-file config/custom_config.yaml
+
+# Alternative execution with PYTHONPATH (if needed)
+PYTHONPATH=. python src/main.py --simple --project test_projects/c
 ```
 
 ## Code Structure (Current)
@@ -178,16 +182,16 @@ export LIBCLANG_PATH=/usr/lib/llvm-10/lib/libclang.so.1
 ### Quick Test Generation
 ```bash
 # Simple project test generation (using unified interface)
-DEEPSEEK_API_KEY="your_key" python src/main.py --config simple_c
+DEEPSEEK_API_KEY="your_key" python -m src.main --config simple_c
 
 # Complex project test generation
-DEEPSEEK_API_KEY="your_key" python src/main.py --config complex_example
+DEEPSEEK_API_KEY="your_key" python -m src.main --config complex_example
 
 # Direct project specification (without config)
-python src/main.py --simple --project test_projects/c --output ./experiment/generated_tests
+python -m src.main --simple --project test_projects/c --output ./experiment/generated_tests
 
 # List available projects
-python src/main.py --list-projects
+python -m src.main --list-projects
 ```
 
 ### Test Directory Organization
@@ -270,12 +274,13 @@ The complex C project located in `test_projects/complex_c_project/` demonstrates
 
 2. **Python Path Configuration**:
    - **Problem**: Module import errors due to incorrect Python path
-   - **Solution**: Ensure proper path setup in scripts:
+   - **Solution**: Use module execution (`python -m src.main`) or ensure proper path setup:
      ```python
      import sys
      from pathlib import Path
      sys.path.insert(0, str(Path(__file__).parent.parent))
      ```
+   - **Recommended**: Always use `python -m src.main` for consistent execution
 
 3. **libclang Configuration**:
    - **Problem**: libclang not found or improperly configured
