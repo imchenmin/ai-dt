@@ -107,6 +107,7 @@ ai-dt/
 - **Complex Project Support**: Multi-module C projects with cross-module dependency analysis
 - **Batch Processing**: Automated test generation for large codebases
 - **Comprehensive Testing**: AI-generated tests covering normal cases, boundaries, exceptions, and mocking
+- **Automatic Function Filtering**: Correctly identifies project functions while excluding standard library functions
 
 ### ⚠️ Pending Improvements
 - C++ class method analysis needs enhancement
