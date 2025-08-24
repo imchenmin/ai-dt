@@ -152,15 +152,16 @@ The complex C project in `test_projects/complex_c_project/` demonstrates:
 - **Progress Tracking**: Added real-time progress, ETA, and generation statistics
 - **Language-Specific Mocking**: Unified MOCKER method for both C and C++ function mocking
 - **Logging System Refactor**: Replaced all print statements with enhanced logger throughout codebase
+- **Batch Processing Optimization**: Implemented concurrent processing with configurable worker counts and immediate prompt saving
+- **Concurrent Processing**: Support for parallel LLM requests with ThreadPoolExecutor (1, 3, or 5 workers)
 
 ### 🚧 Pending Enhancements
-- **Batch Processing Optimization**: Implement concurrent processing with prompt-first generation approach
-- **Progress Statistics**: Add generation rate tracking and ETA estimation
-- **Concurrent Processing**: Support for parallel LLM requests to improve generation speed
-- **Enhanced Error Handling**: Better retry mechanisms and error recovery
-- **Log Analysis**: Automated log parsing and performance reporting
+- **Enhanced Error Handling**: Better retry mechanisms and error recovery for concurrent operations
+- **Log Analysis**: Automated log parsing and performance reporting for batch processing
 - **Template Optimization**: Further refinement of prompt templates based on generation results
 - **Function Filtering UI**: Interactive function selection interface
 - **Test Quality Assessment**: Automated test quality scoring and validation
+- **Resource Monitoring**: CPU and memory usage tracking during concurrent processing
+- **Dynamic Concurrency**: Adaptive worker count based on system resources and API rate limits
 
 - 每一次完成整个大的工作量并测试完成后，将工作日志写到 @docs/work_logs/ 中
