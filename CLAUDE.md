@@ -99,31 +99,14 @@ ai-dt/
 ## Validation Status
 
 ### ✅ Verified Features
-- **libclang Integration**: Successfully parses C/C++ AST (supports clang-10)
-- **Function Signature Extraction**: Correctly extracts return types and parameters
-- **Function Body Extraction**: Extracts complete function implementation code
-- **Testable Function Identification**: 
-  - C: Non-static functions correctly identified
-  - C++: Public methods and free functions identified
-- **Call Site Analysis**: Detects function call locations across project with deduplication
-- **Compile Commands Processing**: Handles compile_commands.json with relative paths
-- **LLM Integration**: Complete OpenAI and DeepSeek API support
-  - OpenAI: GPT-3.5-turbo, GPT-4 models
-  - DeepSeek: deepseek-chat, deepseek-coder models (tested and working)
-  - Multi-provider configuration management
-  - Context compression for token optimization
-- **Complex C Project Support**: Full support for multi-module C projects with:
-  - Linked list data structures (12 functions)
-  - Hash table implementations (10 functions) 
-  - Memory pool utilities (9 functions)
-  - Cross-module function call analysis
-- **Batch Processing**: Automated batch test generation for large codebases
-- **Comprehensive Test Generation**: AI-powered generation of:
-  - Normal case testing
-  - Boundary condition testing
-  - Exception handling scenarios
-  - Mocking of external dependencies (malloc, etc.)
-  - Multiple call scenario testing
+- **libclang Integration**: C/C++ AST parsing with clang-10 support
+- **Function Analysis**: Signature extraction, body extraction, and testable function identification
+- **Call Site Analysis**: Cross-project function call detection with deduplication
+- **Compile Commands**: Handles compile_commands.json with relative path resolution
+- **LLM Integration**: Complete OpenAI and DeepSeek API support with multi-provider configuration
+- **Complex Project Support**: Multi-module C projects with cross-module dependency analysis
+- **Batch Processing**: Automated test generation for large codebases
+- **Comprehensive Testing**: AI-generated tests covering normal cases, boundaries, exceptions, and mocking
 
 ### ⚠️ Pending Improvements
 - C++ class method analysis needs enhancement
@@ -199,32 +182,17 @@ This organization helps:
 - Enable easy comparison between different test generation runs
 - Maintain historical test generation results for analysis
 
-## Complex C Project Details
+## Complex C Project Reference
 
-The complex C project located in `test_projects/complex_c_project/` demonstrates the tool's capabilities with:
+The complex C project located in `test_projects/complex_c_project/` serves as a comprehensive validation suite, demonstrating the tool's capabilities with multiple interconnected modules.
 
-### **Data Structures Implemented**
-- **Linked List Module** (`data_structures/linked_list.{h,c}`):
-  - 12 functions including create, destroy, append, prepend, insert/remove at index
-  - Comprehensive memory management with proper error handling
-  - Iterator pattern implementation
+**Key Features Demonstrated:**
+- **Multi-module Architecture**: Linked lists, hash tables, and memory management utilities
+- **Cross-module Function Calls**: Complex dependency analysis and context extraction
+- **Comprehensive Testing**: 31+ testable functions with varied complexity levels
+- **Real-world Patterns**: Memory management, error handling, and data structure validation
 
-- **Hash Table Module** (`data_structures/hash_table.{h,c}`):
-  - 10 functions with DJB2 hashing algorithm
-  - Dynamic resizing and collision handling
-  - Key-value storage with efficient lookup
-
-- **Memory Pool Module** (`utils/memory_pool.{h,c}`):
-  - 9 functions implementing best-fit allocation
-  - Memory usage tracking and validation
-  - Error code enumeration for robust error handling
-
-### **Test Generation Features**
-- **Comprehensive Coverage**: Tests generated for all 31 testable functions
-- **Mocking Support**: Automatic mocking of external dependencies (malloc, etc.)
-- **Boundary Testing**: Tests for normal, boundary, and exception scenarios
-- **Multi-call Scenarios**: Testing functions under multiple invocation patterns
-- **Structure Validation**: Verification of data structure initialization
+*For detailed implementation specifics, refer to the actual source files in `test_projects/complex_c_project/`.*
 
 ## Important Patterns
 
@@ -250,47 +218,15 @@ The complex C project located in `test_projects/complex_c_project/` demonstrates
 
 ## Lessons Learned and Common Pitfalls
 
-### 🔧 Repeated Issues and Solutions
+### 🔧 Common Issues and Solutions
 
-1. **Proxy Configuration Issues**:
-   - **Problem**: Malformed proxy environment variables causing "Invalid IPv4 address" errors
-   - **Solution**: Clear proxy variables before running LLM integration:
-     ```bash
-     unset https_proxy http_proxy all_proxy
-     # Or use clean environment:
-     env -i DEEPSEEK_API_KEY="your_key" python script.py
-     ```
+1. **Proxy Configuration**: Clear malformed proxy variables before LLM integration
+2. **Python Path**: Use `python -m src.main` for consistent module execution
+3. **libclang Setup**: Use unified configuration approach for reliable clang integration
+4. **API Timeouts**: Implement batch processing with appropriate delays between calls
+5. **Function Analysis**: Maintain consistent access patterns and error handling
 
-2. **Python Path Configuration**:
-   - **Problem**: Module import errors due to incorrect Python path
-   - **Solution**: Use module execution (`python -m src.main`) or ensure proper path setup:
-     ```python
-     import sys
-     from pathlib import Path
-     sys.path.insert(0, str(Path(__file__).parent.parent))
-     ```
-   - **Recommended**: Always use `python -m src.main` for consistent execution
-
-3. **libclang Configuration**:
-   - **Problem**: libclang not found or improperly configured
-   - **Solution**: Use unified configuration approach:
-     ```python
-     from src.utils.libclang_config import ensure_libclang_configured
-     ensure_libclang_configured()
-     ```
-
-4. **LLM API Timeouts**:
-   - **Problem**: Long-running test generation timing out
-   - **Solution**: Implement batch processing with delays:
-     ```python
-     # Add delays between API calls
-     time.sleep(2)  # Between individual generations
-     time.sleep(10) # Between batches
-     ```
-
-5. **Function Analysis Errors**:
-   - **Problem**: Dictionary vs object attribute access issues
-   - **Solution**: Consistent access patterns and proper error handling
+*For detailed troubleshooting steps, refer to the specific error patterns and solutions documented in the codebase.*
 
 ### 🚀 Best Practices Established
 
@@ -301,3 +237,4 @@ The complex C project located in `test_projects/complex_c_project/` demonstrates
 5. **Fallback mechanisms** when LLM generation fails
 6. **Proper mocking** of external dependencies in tests
 7. **Memory safety** in all test cases (proper cleanup)
+- 每一次完成整个大的工作量并测试完成后，将工作日志写到 @docs/work_logs/ 中

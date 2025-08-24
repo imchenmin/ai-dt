@@ -32,9 +32,7 @@
 ### Immediate Next Steps
 - [ ] Add comprehensive error handling for different LLM providers
 - [ ] Implement retry mechanisms with exponential backoff
-- [ ] Add rate limiting and quota management
 - [ ] Create test validation system for generated tests
-- [ ] Add support for Anthropic Claude models
 - [ ] Implement local model inference support
 
 ### Enhanced C++ Support

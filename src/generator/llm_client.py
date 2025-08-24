@@ -188,15 +188,8 @@ class LLMClient:
             'usage': {}
         }
     
-    def save_test_code(self, test_code: str, function_name: str, output_dir: str) -> str:
-        """Save generated test code to file"""
-        output_path = Path(output_dir) / f"test_{function_name}.cpp"
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(test_code)
-        
-        return str(output_path)
+    # File saving functionality has been moved to TestFileOrganizer
+    # in src/utils/file_organizer.py for better separation of concerns
 
 
 class MockLLMClient:
@@ -385,12 +378,5 @@ int main(int argc, char **argv) {{
     return RUN_ALL_TESTS();
 }}"""
     
-    def save_test_code(self, test_code: str, function_name: str, output_dir: str) -> str:
-        """Save generated test code to file"""
-        output_path = Path(output_dir) / f"test_{function_name}.cpp"
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(test_code)
-        
-        return str(output_path)
+    # File saving functionality has been moved to TestFileOrganizer
+    # in src/utils/file_organizer.py for better separation of concerns

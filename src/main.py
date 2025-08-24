@@ -209,9 +209,11 @@ def generate_tests_with_config(functions_with_context: List[Dict[str, Any]],
     logger.info(f"Generating tests for {len(functions_with_context)} functions...")
     
     # Generate tests
+    project_name = Path(project_path).name
     results = test_generator.generate_tests(
         functions_with_context,
-        output_dir=output_dir
+        output_dir=output_dir,
+        project_name=project_name
     )
     
     return results
