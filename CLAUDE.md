@@ -65,7 +65,8 @@ ai-dt/
 │   │   ├── compile_db_generator.py
 │   │   ├── path_converter.py
 │   │   ├── context_compressor.py
-│   │   └── libclang_config.py
+│   │   ├── libclang_config.py
+│   │   └── prompt_templates.py  # Advanced prompt generation templates
 │   ├── __init__.py
 │   └── main.py
 ├── scripts/             # Demo and utility scripts
@@ -147,6 +148,26 @@ export LIBCLANG_PATH=/usr/lib/llvm-10/lib/libclang.so.1
 - Set `DEEPSEEK_API_KEY` in environment or `.env` file
 - Tested and verified working with both deepseek-chat and deepseek-coder models
 - Generated tests saved in `experiment/generated_tests_deepseek_*/` directories
+
+### Prompt Template System
+
+The system now uses advanced prompt templates for improved test generation:
+
+#### Language-Specific Prompts
+- **C functions**: Specialized for C language testing patterns
+- **C++ functions**: Focus on C++ features like exceptions, memory management, templates
+- **Automatic detection**: Based on file extension and function analysis
+
+#### Specialized Templates
+- **Memory functions**: Extra safety guidance for allocation/deletion functions
+- **Dynamic Mock requirements**: Only request mocking when external dependencies exist
+- **Safety emphasis**: Avoid testing undefined behavior and dangerous patterns
+
+#### Key Features
+- Clear language identification (C++ instead of CPP)
+- Context-aware prompt generation
+- Enhanced safety guidance for memory operations
+- Reduced confusion in LLM instructions
 - **Proxy Configuration Note**: If encountering proxy issues, clear malformed proxy environment variables:
   ```bash
   unset https_proxy http_proxy all_proxy
