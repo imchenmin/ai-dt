@@ -89,35 +89,33 @@ def demo_complex_c_workflow():
         print("   Using mock LLM (set DEEPSEEK_API_KEY for real API)")
         generator = TestGenerator()
     
-    # Generate tests for ALL functions in the complex project
+    # Generate test for a single function for debugging
+    target_function_name = "hash_table_put"
     for item in functions_with_context:
         func = item['function']
+        if func['name'] != target_function_name:
+            continue
+
         context = item['context']
-        
         print(f"DEBUG: Generating test for function: '{func['name']}'")
         
         # Generate test using LLM
         try:
             result = generator.generate_test(func, context)
             test_code = result.get('test_code', '')
+
+            # Print the prompt that was generated
+            print("\n" + "="*25 + " FINAL PROMPT " + "="*25 + "\n")
+            print(result.get('prompt', 'PROMPT NOT FOUND IN RESULT'))
+            print("\n" + "="*62 + "\n")
             
             if not test_code:
                 # Fallback to mock if generation fails
                 test_code = f"// Mock test for {func['name']}\n"
-                test_code += "#include <gtest/gtest.h>\n"
-                test_code += f"#include \"{os.path.basename(func['file'])}\"\n\n"
-                test_code += f"TEST({func['name'].capitalize()}Test, BasicFunctionality) {{\n"
-                test_code += f"    // Test implementation for {func['name']}\n"
-                test_code += "}\n"
         except Exception as e:
             print(f"     Error generating test: {e}")
             # Fallback to mock
             test_code = f"// Mock test for {func['name']}\n"
-            test_code += "#include <gtest/gtest.h>\n"
-            test_code += f"#include \"{os.path.basename(func['file'])}\"\n\n"
-            test_code += f"TEST({func['name'].capitalize()}Test, BasicFunctionality) {{\n"
-            test_code += f"    // Test implementation for {func['name']}\n"
-            test_code += "}\n"
         
         # Save test file
         output_dir = "generated_tests_complex_c"
@@ -130,6 +128,7 @@ def demo_complex_c_workflow():
             f.write(test_code)
         
         print(f"     Generated: {test_filepath} ({len(test_code)} chars)")
+        break  # Exit loop after processing the target function
     
     # Step 5: Show results
     print("\n5. Generation Results:")

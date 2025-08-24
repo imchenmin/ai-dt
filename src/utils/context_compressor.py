@@ -50,10 +50,11 @@ class ContextCompressor:
         return f"{function_info['return_type']} {function_info['name']}({params})"
     
     def _compress_dependencies(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Compress dependency information"""
+        """Compress dependency information, now expecting richer data structures."""
         called_funcs = context.get('called_functions', [])
         macros = context.get('macros_used', [])
         macro_defs = context.get('macro_definitions', [])
+        # Assume data_structs is now a list of dicts: [{'name': str, 'definition': str}]
         data_structs = context.get('data_structures', [])
         
         # Get full definitions for used macros
@@ -65,14 +66,16 @@ class ContextCompressor:
                     macro_definitions.append(macro_def)
                     break
         
+        # Extract names and definitions from the richer data structure
+        struct_names = [s['name'] for s in data_structs[:2]]
+        struct_definitions = [s['definition'] for s in data_structs[:2] if 'definition' in s]
+
         return {
-            'called_functions': [
-                {'name': f['name'], 'location': f.get('location', 'unknown')}
-                for f in called_funcs[:3]  # Top 3 most relevant
-            ],
-            'macros': macros[:3],  # Top 3 macros
-            'macro_definitions': macro_definitions[:2],  # Top 2 macro definitions
-            'data_structures': data_structs[:2]  # Top 2 data structures
+            'called_functions': called_funcs[:3],  # Pass through the full dict
+            'macros': macros[:3],
+            'macro_definitions': macro_definitions[:2],
+            'data_structures': struct_names, # Keep just the names here for backward compatibility
+            'dependency_definitions': struct_definitions # Add the full definitions
         }
     
     def _compress_usage_patterns(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:

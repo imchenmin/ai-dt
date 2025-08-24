@@ -73,10 +73,12 @@ class TestGenerator:
                 result['function_name'] = function_info['name']
                 result['prompt_length'] = len(prompt)
                 result['test_length'] = len(result['test_code'])
+                result['prompt'] = prompt
                 
             else:
                 logger.error(f"Failed to generate test for {function_info['name']}: "
                            f"{result['error']}")
+                result['prompt'] = prompt
             
             return result
             

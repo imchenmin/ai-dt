@@ -188,7 +188,8 @@ def analyze_project_functions(project_config: Dict[str, Any]) -> List[Dict[str, 
 
 
 def generate_tests_with_config(functions_with_context: List[Dict[str, Any]], 
-                              project_config: Dict[str, Any]) -> List[Dict[str, Any]]:
+                              project_config: Dict[str, Any],
+                              prompt_only: bool = False) -> List[Dict[str, Any]]:
     """Generate tests using configured LLM provider"""
     llm_provider = project_config.get('llm_provider', 'deepseek')
     model = project_config.get('model', 'deepseek-coder')
@@ -198,19 +199,23 @@ def generate_tests_with_config(functions_with_context: List[Dict[str, Any]],
     project_path = project_config['path']
     output_dir = generate_output_directory(project_path, base_output_dir)
     
-    # Check if LLM provider is available
-    api_key = ConfigLoader.get_api_key(llm_provider)
-    if not api_key:
-        llm_config = ConfigLoader.get_llm_config(llm_provider)
-        logger.error(f"{llm_provider.upper()} API key not found.")
-        logger.info(f"Please set {llm_config['api_key_env']} environment variable.")
-        return []
+    # In prompt-only mode, we don't need a real API key and will use the mock client.
+    if not prompt_only:
+        api_key = ConfigLoader.get_api_key(llm_provider)
+        if not api_key:
+            llm_config = ConfigLoader.get_llm_config(llm_provider)
+            logger.error(f"{llm_provider.upper()} API key not found.")
+            logger.info(f"Please set {llm_config['api_key_env']} environment variable.")
+            return []
+    else:
+        logger.info("Running in prompt-only mode. LLM calls will be skipped.")
+        api_key = None # No key needed for mock client
     
-    logger.info(f"Generating tests with {llm_provider} ({model})...")
+    logger.info(f"Generating tests with {llm_provider if not prompt_only else 'mock'} ({model})...")
     
     # Initialize test generator
     test_generator = TestGenerator(
-        llm_provider=llm_provider,
+        llm_provider=llm_provider if not prompt_only else "mock",
         api_key=api_key,
         model=model
     )
@@ -318,6 +323,8 @@ def main():
                       help="Path to configuration file (config mode)")
     parser.add_argument("--profile", default="comprehensive",
                       help="Execution profile (quick, comprehensive, custom)")
+    parser.add_argument("--prompt-only", action="store_true",
+                        help="Only generate prompts and skip LLM requests.")
     
     args = parser.parse_args()
     
@@ -345,7 +352,11 @@ def main():
                 return False
             
             # Generate tests
-            results = generate_tests_with_config(functions_with_context, project_config)
+            results = generate_tests_with_config(
+                functions_with_context, 
+                project_config,
+                prompt_only=args.prompt_only
+            )
             
             # Print results
             print_results(results, project_config)

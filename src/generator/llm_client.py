@@ -205,7 +205,7 @@ class MockLLMClient:
         self.provider = "mock"
     
     def generate_test(self, prompt: str, max_tokens: int = 2000, 
-                     temperature: float = 0.3) -> Dict[str, Any]:
+                     temperature: float = 0.3, **kwargs) -> Dict[str, Any]:
         """Generate mock test code"""
         # Extract function name from prompt
         function_name = "unknown"
