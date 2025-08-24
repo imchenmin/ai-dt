@@ -66,14 +66,9 @@ class PromptTemplates:
             prompt_parts.append("*   **相关宏定义:**")
             for macro_def in deps['macro_definitions']:
                 prompt_parts.append(f"    *   `#define {macro_def['name']} {macro_def.get('definition', '')}`")
-
         prompt_parts.extend([
-            "*   **编译信息:**",
-            f"    *   **头文件路径:** `{', '.join([f for f in comp['key_flags'] if f.startswith('-I')])}`",
-            f"    *   **编译选项:** `{', '.join([f for f in comp['key_flags'] if not f.startswith('-I')])}`",
-            "",
             "# 4. 测试生成要求 (Test Generation Requirements)",
-            "1.  **测试框架:** 必须使用 **Google Test** (`gtest`)。",
+            "1.  **测试框架:** 必须使用 **Google Test** (`gtest`).",
         ])
 
         if has_external_deps:
@@ -83,22 +78,42 @@ class PromptTemplates:
                 declaration = func.get('declaration', f"{func['name']} (...)")
                 prompt_parts.append(f"    *   `{declaration}` - **{mock_status}**")
 
-        # Add MockCpp guidance - use MOCKER method for both C and C++
+        # Add comprehensive MockCpp guidance with correct syntax examples
         mockcpp_guidance = [
-            "3.  **MockCpp使用指导:",
-            f"    *   **语言类型:** {language_display}项目",
-            "    *   **Mocking方法:** 统一使用 `MOCKER(function_name)` 进行函数Mock",
-            "    *   **关键步骤:",
-            "        - 使用 `MOCKER(function_name)` 创建函数Mock",
-            "        - 使用 `.stubs()` 设置默认返回值",
-            "        - 使用 `.expects(...).returns(...)` 设置期望返回值",
-            "        - 使用 `.expects(...).throws(...)` 设置期望抛出异常",
-            "        - 使用 `MOCK_CPP::Verify()` 验证所有Mock调用",
-            "    *   **注意事项:",
-            "        - MockCpp支持C函数和C++自由函数的Mocking",
+            "3.  **MockCpp使用指导 (正确语法):",
+            f"    *   **语言:** {language_display}",
+            "    *   **Mock方法:** 使用 `MOCKER(function_name)` 进行函数Mock",
+            "    *   **正确语法示例 (不要使用Google Mock语法):",
+            "        ```cpp",
+            "        // 正确: MockCpp链式调用",
+            "        MOCKER(malloc)",
+            "            .stubs()",
+            "            .with(eq(sizeof(LinkedList)))",
+            "            .will(returnValue(&fake_list));",
+            "        ",
+            "        // 正确: 带调用次数验证",
+            "        MOCKER(create_node)",
+            "            .expects(once())",
+            "            .with(eq(42))",
+            "            .will(returnValue(&mock_node));",
+            "        ",
+            "        // 错误: 不要使用Google Mock语法",
+            "        // mock().expectOneCall(\"malloc\").withParameter(\"size\", size).andReturnValue(ptr);",
+            "        ```",
+            "    *   **核心方法:",
+            "        - `.stubs()` - 不校验调用次数",
+            "        - `.expects(times)` - 校验调用次数 (`once()/never()/exactly(n)/atLeast(n)/atMost(n)`)",
+            "        - `.with(constraints)` - 参数约束 (`eq(v)/neq(v)/any()/spy(var)/outBound(var)/outBoundP(ptr,size)`)",
+            "        - `.will(behavior)` - 函数行为 (`returnValue(v)/returnObjectList(v1,v2)/repeat(v,t)/ignoreReturnValue()/throws(e)`)",
+            "    *   **验证:** 在teardown中使用 `GlobalMockObject::verify()`",
+            "    *   **最佳实践:**",
+            "        - 使用`MOCKER(function)`MockC函数和静态成员函数",
+            "        - 使用`MockObject<Class>obj;MOCK_METHOD(obj,method)`Mock类成员函数",
+            "        - 有返回值函数必须使用`.will(...)`指定返回值",
             "        - 避免Mock标准库函数和系统调用",
-            "        - 优先Mock自定义的辅助函数和工具函数",
-            "        - 对于C++类成员函数，可以使用MOCKER但需要特殊处理"
+            "        - 优先Mock自定义辅助函数和工具函数",
+            "        - 使用`.id()`和`.before()/.after()`进行调用顺序验证",
+            "        - 使用`.with()`进行参数验证和输出参数设置"
         ]
         
 

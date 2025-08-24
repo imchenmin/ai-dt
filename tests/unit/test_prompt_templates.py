@@ -61,8 +61,9 @@ def test_prompt_templates_with_compressed_context():
     assert 'int test_func(int x)' in prompt
     assert 'malloc' in prompt
     assert 'DEBUG' in prompt
-    assert '-I/include' in prompt
-    assert '-O2' in prompt
+    # Only compilation flags (not include paths) should be present
+    assert '-I/include' not in prompt  # Include paths should be filtered out
+    assert '-O2' in prompt  # Compilation flags should remain
     assert 'Google Test' in prompt
     
     # Test memory function detection
