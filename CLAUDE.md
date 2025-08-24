@@ -76,25 +76,14 @@ ai-dt/
 │   └── complex_c_test_generation.yaml
 ├── templates/           # Test template files
 ├── tests/               # Unit tests for the tool itself
-├── test_projects/       # Sample test projects
-│   ├── c/              # Simple C language test project
-│   └── complex_c_project/  # Complex C project with multiple modules
-│       ├── data_structures/
-│       │   ├── linked_list.h
-│       │   ├── linked_list.c
-│       │   ├── hash_table.h
-│       │   └── hash_table.c
-│       ├── utils/
-│       │   ├── memory_pool.h
-│       │   └── memory_pool.c
-│       ├── main.c
-│       └── compile_commands.json
-├── experiment/                # Experimental test generation results
-│   ├── generated_tests/            # Auto-generated test directories with timestamps
-│   │   └── {project_name}_{timestamp}/  # Format: c_20240824_092434/
-│   ├── generated_tests_complex_c/  # Generated test files for complex project
+├── test_projects/       # Sample test projects for validation
+│   ├── c/              # Simple C math utilities project
+│   └── complex_c_project/  # Complex C project with data structures
+├── experiment/          # Experimental test generation results
+│   ├── generated_tests/            # Auto-generated test directories
+│   ├── generated_tests_complex_c/  # Complex project tests
 │   ├── generated_tests_deepseek/   # DeepSeek generated tests
-│   └── generated_tests_demo/       # Demo generated tests
+│   └── generated_tests_demo/       # Demo test files
 ├── docs/                # Documentation
 ├── requirements.txt     # Python dependencies
 └── requirements.md      # Requirements documentation
