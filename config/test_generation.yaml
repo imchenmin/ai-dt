@@ -58,6 +58,41 @@ projects:
       custom_include_patterns: []
       custom_exclude_patterns: []
 
+  # Redis C project (real-world scenario)
+  redis:
+    path: "test_projects/redis"
+    comp_db: "test_projects/redis/compile_commands.json"
+    description: "Redis key-value store project for real-world C testing scenarios"
+    
+    # Custom output directory for this project
+    output_dir: "./experiment/generated_tests_redis"
+    include_patterns: ["src/redis-cli.c"]
+    filter:
+      skip_std_lib: true
+      skip_compiler_builtins: true
+      skip_operators: true
+      skip_special_functions: true
+      custom_include_patterns: []
+      custom_exclude_patterns: []
+
+  # Example: Project with selective parsing
+  selective_parsing_example:
+    path: "test_projects/complex_c_project"
+    comp_db: "test_projects/complex_c_project/compile_commands.json"
+    description: "Example project demonstrating selective parsing"
+    
+    # Only analyze files in specific directories
+    include_patterns: ["src/data_structures/", "src/algorithms/"]
+    
+    # Exclude specific files or directories
+    exclude_patterns: ["src/third_party/", "vendor/"]
+    
+    filter:
+      skip_std_lib: true
+      skip_compiler_builtins: true
+      skip_operators: true
+      skip_special_functions: true
+
 # LLM provider configurations
 llm_providers:
   deepseek:

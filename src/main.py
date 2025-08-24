@@ -153,11 +153,20 @@ def analyze_project_functions(project_config: Dict[str, Any]) -> List[Dict[str, 
     project_root = project_config['path']
     comp_db_path = project_config['comp_db']
     
-    # Parse compilation database
+    # Get include/exclude patterns from config
+    include_patterns = project_config.get('include_patterns')
+    exclude_patterns = project_config.get('exclude_patterns')
+    
+    # Parse compilation database with optional filtering
     logger.info("Parsing compilation database...")
     parser = CompilationDatabaseParser(comp_db_path)
-    compilation_units = parser.parse()
+    compilation_units = parser.parse(include_patterns=include_patterns, exclude_patterns=exclude_patterns)
     logger.info(f"Found {len(compilation_units)} compilation units")
+    
+    if include_patterns:
+        logger.info(f"Including patterns: {include_patterns}")
+    if exclude_patterns:
+        logger.info(f"Excluding patterns: {exclude_patterns}")
     
     # Analyze functions
     logger.info("Analyzing functions...")
@@ -278,7 +287,8 @@ def print_results(results: List[Dict[str, Any]], project_config: Dict[str, Any])
             logger.info(f"  • {result['function_name']}: {result.get('error', 'Unknown error')}")
 
 
-def generate_tests_simple_mode(project_path: str, output_dir: str, compile_commands: str):
+def generate_tests_simple_mode(project_path: str, output_dir: str, compile_commands: str,
+                               include_patterns: List[str] = None, exclude_patterns: List[str] = None):
     """Simple mode: generate tests without configuration"""
     start_time = datetime.datetime.now()
     
@@ -293,9 +303,11 @@ def generate_tests_simple_mode(project_path: str, output_dir: str, compile_comma
     # Configure libclang
     ensure_libclang_configured()
     
-    # Parse compilation database
+    # Parse compilation database with optional filtering
     parser = CompilationDatabaseParser(compile_commands)
-    compilation_units = parser.parse()
+    compilation_units = parser.parse(include_patterns=include_patterns, exclude_patterns=exclude_patterns)
+    
+    logger.info(f"Filtered to {len(compilation_units)} compilation units")
     
     # Analyze functions
     function_analyzer = FunctionAnalyzer(project_path)
@@ -337,6 +349,78 @@ def generate_tests_simple_mode(project_path: str, output_dir: str, compile_comma
     close_logging()
 
 
+def generate_tests_single_file(project_path: str, file_path: str, output_dir: str, 
+                               compile_commands: str, prompt_only: bool = False):
+    """Generate tests for a single file only"""
+    start_time = datetime.datetime.now()
+    
+    # Generate output directory based on project name and timestamp
+    auto_output_dir = generate_output_directory(project_path, output_dir)
+    
+    # Setup enhanced logging with file output to experiment directory
+    setup_logging(output_dir=auto_output_dir, log_level=logging.INFO)
+    
+    logger.info(f"Running in single file mode for: {file_path}")
+    
+    # Configure libclang
+    ensure_libclang_configured()
+    
+    # Parse compilation database but only include the specified file
+    parser = CompilationDatabaseParser(compile_commands)
+    compilation_units = parser.parse(include_patterns=[file_path])
+    
+    if not compilation_units:
+        logger.error(f"No compilation units found for file: {file_path}")
+        close_logging()
+        return
+    
+    logger.info(f"Found {len(compilation_units)} compilation units for file")
+    
+    # Analyze functions from the single file
+    function_analyzer = FunctionAnalyzer(project_path)
+    testable_functions = []
+    
+    for unit in compilation_units:
+        functions = function_analyzer.analyze_file(unit['file'], unit['arguments'])
+        
+        # Add context information to each function
+        for func in functions:
+            func['context'] = function_analyzer._analyze_function_context(
+                func, unit['arguments'], compilation_units
+            )
+        
+        testable_functions.extend(functions)
+    
+    if not testable_functions:
+        logger.error("No testable functions found in the specified file")
+        close_logging()
+        return
+    
+    # Generate tests
+    test_generator = TestGenerator()
+    successful = 0
+    failed = 0
+    
+    for function in testable_functions:
+        test_result = test_generator.generate_test(function, function['context'])
+        
+        # Save generated test
+        if test_result['success']:
+            output_path = Path(auto_output_dir) / f"test_{function['name']}.cpp"
+            output_path.write_text(test_result['test_code'])
+            logger.info(f"Generated test for {function['name']} at {output_path}")
+            successful += 1
+        else:
+            logger.error(f"Failed to generate test for {function['name']}: {test_result['error']}")
+            failed += 1
+    
+    # Log generation statistics
+    log_generation_stats(start_time, len(testable_functions), successful, failed)
+    
+    # Close file handlers
+    close_logging()
+
+
 def main():
     parser = argparse.ArgumentParser(description="AI-Driven C/C++ Test Generator")
     
@@ -348,6 +432,8 @@ def main():
                           help="Configuration mode: use project from config file")
     mode_group.add_argument("--list-projects", action="store_true",
                           help="List available projects from configuration")
+    mode_group.add_argument("--single-file", metavar="FILE_PATH",
+                          help="Single file mode: analyze only the specified file")
     
     # Simple mode arguments
     parser.add_argument("-p", "--project", help="Project root directory (simple mode)")
@@ -355,6 +441,10 @@ def main():
                       help="Output directory (simple mode)")
     parser.add_argument("--compile-commands", default="compile_commands.json", 
                       help="Path to compile_commands.json (simple mode)")
+    parser.add_argument("--include", nargs='+', 
+                      help="Include only files/folders matching these patterns (simple mode)")
+    parser.add_argument("--exclude", nargs='+', 
+                      help="Exclude files/folders matching these patterns (simple mode)")
     
     # Configuration mode arguments
     parser.add_argument("--config-file", default="config/test_generation.yaml",
@@ -416,7 +506,23 @@ def main():
             generate_tests_simple_mode(
                 project_path=args.project,
                 output_dir=args.output,
-                compile_commands=args.compile_commands
+                compile_commands=args.compile_commands,
+                include_patterns=args.include,
+                exclude_patterns=args.exclude
+            )
+            return True
+            
+        elif args.single_file:
+            # Single file mode
+            if not args.project:
+                parser.error("--single-file mode requires --project argument")
+            
+            generate_tests_single_file(
+                project_path=args.project,
+                file_path=args.single_file,
+                output_dir=args.output,
+                compile_commands=args.compile_commands,
+                prompt_only=args.prompt_only
             )
             return True
             

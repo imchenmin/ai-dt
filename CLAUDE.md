@@ -34,6 +34,13 @@ cp .env.example .env  # Add OPENAI_API_KEY and/or DEEPSEEK_API_KEY
 # Simple mode (recommended)
 python -m src.main --simple --project test_projects/c --output ./experiment/generated_tests
 
+# Selective parsing for large projects
+python -m src.main --simple --project large_project --include "src/module_a/" "src/module_b/"
+python -m src.main --simple --project large_project --exclude "third_party/" "vendor/"
+
+# Single file mode
+python -m src.main --single-file src/module_a/specific_file.c --project large_project
+
 # Configuration mode
 python -m src.main --config simple_c
 
@@ -125,6 +132,41 @@ The complex C project in `test_projects/complex_c_project/` demonstrates:
 - 31+ testable functions with varied complexity
 - Real-world patterns for memory management and error handling
 
+## Selective Parsing for Large Projects
+
+The tool now supports selective parsing of compilation databases to handle large codebases efficiently:
+
+### Features
+- **Include Patterns**: Specify directories or files to include using `--include` flag
+- **Exclude Patterns**: Filter out unwanted directories or files using `--exclude` flag  
+- **Single File Mode**: Analyze and test a single file with `--single-file`
+- **Configuration Support**: Define include/exclude patterns in project configuration
+
+### Usage Examples
+```bash
+# Include specific directories
+python -m src.main --simple --project large_project --include "src/module_a/" "src/module_b/"
+
+# Exclude third-party code
+python -m src.main --simple --project large_project --exclude "third_party/" "vendor/"
+
+# Single file analysis
+python -m src.main --single-file src/module_a/specific_file.c --project large_project
+
+# Configuration-based filtering (in test_generation.yaml)
+selective_project:
+  path: "large_project"
+  comp_db: "large_project/compile_commands.json"
+  include_patterns: ["src/core/", "src/utils/"]
+  exclude_patterns: ["third_party/", "vendor/"]
+```
+
+### Pattern Matching Rules
+- Directory patterns should end with `/` (e.g., `src/module/`)
+- File patterns can be exact names or partial paths
+- Supports both relative and absolute path matching
+- Multiple patterns can be specified
+
 ## Best Practices
 
 1. **Always use absolute paths** for file operations
@@ -134,6 +176,7 @@ The complex C project in `test_projects/complex_c_project/` demonstrates:
 5. **Fallback mechanisms** when LLM generation fails
 6. **Proper mocking** of external dependencies
 7. **Memory safety** in all test cases
+8. **Use selective parsing** for large projects to improve performance
 
 ## Common Issues & Solutions
 
@@ -154,6 +197,7 @@ The complex C project in `test_projects/complex_c_project/` demonstrates:
 - **Logging System Refactor**: Replaced all print statements with enhanced logger throughout codebase
 - **Batch Processing Optimization**: Implemented concurrent processing with configurable worker counts and immediate prompt saving
 - **Concurrent Processing**: Support for parallel LLM requests with ThreadPoolExecutor (1, 3, or 5 workers)
+- **Selective Parsing**: Added support for folder/file-specific compilation database parsing to handle large projects efficiently
 
 ### 🚧 Pending Enhancements
 - **Enhanced Error Handling**: Better retry mechanisms and error recovery for concurrent operations
