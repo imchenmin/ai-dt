@@ -10,6 +10,7 @@ import time
 from pathlib import Path
 from openai import OpenAI
 from src.utils.logging_utils import get_logger
+from src.utils.error_handling import ErrorHandler, handle_llm_error, LLMError
 
 logger = get_logger(__name__)
 
@@ -18,11 +19,18 @@ class LLMClient:
     """Client for interacting with various LLM providers"""
     
     def __init__(self, provider: str = "openai", api_key: str = None, 
-                 base_url: str = None, model: str = "gpt-3.5-turbo"):
+                 base_url: str = None, model: str = "gpt-3.5-turbo",
+                 max_retries: int = 3, retry_delay: float = 1.0):
         self.provider = provider
         self.api_key = api_key
         self.base_url = base_url
         self.model = model
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
+        self.error_handler = ErrorHandler(
+            max_retries=max_retries,
+            initial_delay=retry_delay
+        )
         self._setup_client()
     
     def _setup_client(self):
@@ -50,12 +58,28 @@ class LLMClient:
     
     def generate_test(self, prompt: str, max_tokens: int = 2000, 
                      temperature: float = 0.3, language: str = "c") -> Dict[str, Any]:
-        """Generate test code using LLM"""
+        """Generate test code using LLM with retry mechanism"""
         try:
             if self.provider == "openai":
-                return self._generate_with_openai(prompt, max_tokens, temperature, language)
+                return self.error_handler.with_retry(
+                    self._generate_with_openai,
+                    "test generation",
+                    self.provider,
+                    prompt=prompt,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    language=language
+                )
             elif self.provider == "deepseek":
-                return self._generate_with_deepseek(prompt, max_tokens, temperature, language)
+                return self.error_handler.with_retry(
+                    self._generate_with_deepseek,
+                    "test generation", 
+                    self.provider,
+                    prompt=prompt,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    language=language
+                )
             elif self.provider == "anthropic":
                 return self._generate_with_anthropic(prompt, max_tokens, temperature, language)
             elif self.provider == "local":
@@ -63,119 +87,63 @@ class LLMClient:
             else:
                 raise ValueError(f"Unsupported provider: {self.provider}")
         
+        except LLMError as e:
+            return e.to_dict()
         except Exception as e:
-            return {
-                'success': False,
-                'error': str(e),
-                'test_code': '',
-                'usage': {}
-            }
+            return handle_llm_error(e, self.provider, "test generation")
     
     def _generate_with_openai(self, prompt: str, max_tokens: int, temperature: float, language: str = "c") -> Dict[str, Any]:
         """Generate test using OpenAI API"""
-        try:
-            from src.utils.prompt_templates import PromptTemplates
-            system_prompt = PromptTemplates.get_system_prompt(language)
-            
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=max_tokens,
-                temperature=temperature
-            )
-            
-            return {
-                'success': True,
-                'test_code': response.choices[0].message.content.strip(),
-                'usage': {
-                    'prompt_tokens': response.usage.prompt_tokens,
-                    'completion_tokens': response.usage.completion_tokens,
-                    'total_tokens': response.usage.total_tokens
-                },
-                'model': self.model
-            }
-            
-        except openai.AuthenticationError:
-            return {
-                'success': False,
-                'error': "Authentication failed. Please check your API key.",
-                'test_code': '',
-                'usage': {}
-            }
-        except openai.RateLimitError:
-            return {
-                'success': False,
-                'error': "Rate limit exceeded. Please try again later.",
-                'test_code': '',
-                'usage': {}
-            }
-        except Exception as e:
-            return {
-                'success': False,
-                'error': f"OpenAI API error: {str(e)}",
-                'test_code': '',
-                'usage': {}
-            }
+        from src.utils.prompt_templates import PromptTemplates
+        system_prompt = PromptTemplates.get_system_prompt(language)
+        
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+        
+        return {
+            'success': True,
+            'test_code': response.choices[0].message.content.strip(),
+            'usage': {
+                'prompt_tokens': response.usage.prompt_tokens,
+                'completion_tokens': response.usage.completion_tokens,
+                'total_tokens': response.usage.total_tokens
+            },
+            'model': self.model
+        }
     
     def _generate_with_deepseek(self, prompt: str, max_tokens: int, temperature: float, language: str = "c") -> Dict[str, Any]:
         """Generate test using DeepSeek API"""
-        try:
-            from src.utils.prompt_templates import PromptTemplates
-            system_prompt = PromptTemplates.get_system_prompt(language)
-            
-            # DeepSeek uses OpenAI-compatible API format
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=max_tokens,
-                temperature=temperature
-            )
-            
-            return {
-                'success': True,
-                'test_code': response.choices[0].message.content.strip(),
-                'usage': {
-                    'prompt_tokens': response.usage.prompt_tokens,
-                    'completion_tokens': response.usage.completion_tokens,
-                    'total_tokens': response.usage.total_tokens
-                },
-                'model': self.model
-            }
-            
-        except openai.AuthenticationError:
-            return {
-                'success': False,
-                'error': "DeepSeek认证失败。请检查您的API密钥。",
-                'test_code': '',
-                'usage': {}
-            }
-        except openai.RateLimitError:
-            return {
-                'success': False,
-                'error': "DeepSeek API速率限制 exceeded。请稍后重试。",
-                'test_code': '',
-                'usage': {}
-            }
-        except openai.APIError as e:
-            return {
-                'success': False,
-                'error': f"DeepSeek API错误: {str(e)}",
-                'test_code': '',
-                'usage': {}
-            }
-        except Exception as e:
-            return {
-                'success': False,
-                'error': f"DeepSeek请求错误: {str(e)}",
-                'test_code': '',
-                'usage': {}
-            }
+        from src.utils.prompt_templates import PromptTemplates
+        system_prompt = PromptTemplates.get_system_prompt(language)
+        
+        # DeepSeek uses OpenAI-compatible API format
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+        
+        return {
+            'success': True,
+            'test_code': response.choices[0].message.content.strip(),
+            'usage': {
+                'prompt_tokens': response.usage.prompt_tokens,
+                'completion_tokens': response.usage.completion_tokens,
+                'total_tokens': response.usage.total_tokens
+            },
+            'model': self.model
+        }
     
     def _generate_with_anthropic(self, prompt: str, max_tokens: int, temperature: float) -> Dict[str, Any]:
         """Generate test using Anthropic API (placeholder)"""

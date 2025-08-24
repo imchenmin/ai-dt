@@ -21,7 +21,8 @@ class TestGenerator:
     """Generates tests using LLM with extracted context"""
     
     def __init__(self, llm_provider: str = "mock", api_key: str = None, 
-                 base_url: str = None, model: str = None):
+                 base_url: str = None, model: str = None,
+                 max_retries: int = 3, retry_delay: float = 1.0):
         self.context_compressor = ContextCompressor()
         
         if llm_provider == "mock":
@@ -40,7 +41,9 @@ class TestGenerator:
                 provider=llm_provider,
                 api_key=api_key,
                 base_url=base_url,
-                model=model
+                model=model,
+                max_retries=max_retries,
+                retry_delay=retry_delay
             )
     
     def generate_test(self, function_info: Dict[str, Any], 

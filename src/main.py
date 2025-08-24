@@ -220,11 +220,14 @@ def generate_tests_with_config(functions_with_context: List[Dict[str, Any]],
     
     logger.info(f"Generating tests with {llm_provider if not prompt_only else 'mock'} ({model})...")
     
-    # Initialize test generator
+    # Initialize test generator with error handling configuration
+    error_config = project_config.get('error_handling', {})
     test_generator = TestGenerator(
         llm_provider=llm_provider if not prompt_only else "mock",
         api_key=api_key,
-        model=model
+        model=model,
+        max_retries=error_config.get('max_retries', 3),
+        retry_delay=error_config.get('retry_delay', 1.0)
     )
     
     logger.info(f"Using output directory: {output_dir}")

@@ -9,6 +9,13 @@ defaults:
   temperature: 0.3
   output_dir: "./experiment/generated_tests"
   
+  # Error handling configuration
+  error_handling:
+    max_retries: 3
+    retry_delay: 1.0
+    max_delay: 60.0
+    backoff_factor: 2.0
+  
   # Function filtering options
   filter:
     skip_std_lib: true
