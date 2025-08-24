@@ -25,21 +25,6 @@ projects:
     path: "test_projects/c"
     comp_db: "test_projects/c/compile_commands.json"
     description: "Simple C math utilities project"
-    
-    # Function-specific settings
-    functions:
-      add:
-        priority: 1
-        test_cases: 5
-      subtract:
-        priority: 1  
-        test_cases: 5
-      multiply:
-        priority: 1
-        test_cases: 5
-      divide:
-        priority: 2  # Higher priority due to error handling
-        test_cases: 8  # More test cases for error scenarios
 
   # Complex C++ project
   complex_example:
@@ -48,34 +33,7 @@ projects:
     description: "Complex C++ math library with templates and exceptions"
     
     # Custom output directory for this project
-    output_dir: "./generated_tests_complex"
-    
-    # Function-specific settings
-    functions:
-      calculateCircleArea:
-        priority: 1
-        test_cases: 10
-        focus: ["boundary_values", "exception_handling", "precision"]
-      calculateSphereVolume:
-        priority: 1
-        test_cases: 10
-        focus: ["boundary_values", "exception_handling", "precision"]
-      allocateDoubleArray:
-        priority: 2
-        test_cases: 6
-        focus: ["memory_management", "null_cases"]
-      freeDoubleArray:
-        priority: 2
-        test_cases: 4
-        focus: ["memory_management", "null_safety"]
-      getLastMathError:
-        priority: 3
-        test_cases: 3
-        focus: ["error_state"]
-      clearMathError:
-        priority: 3
-        test_cases: 3
-        focus: ["state_management"]
+    output_dir: "./experiment/generated_tests_complex"
 
 # LLM provider configurations
 llm_providers:

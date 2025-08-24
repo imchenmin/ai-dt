@@ -28,9 +28,8 @@ class ClangAnalyzer:
         index = clang.cindex.Index.create()
         
         try:
-            # Parse the file with compilation arguments and detailed processing for macros
-            translation_unit = index.parse(file_path, args=compile_args, 
-                                         options=clang.cindex.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
+            # Parse the file with compilation arguments (skip detailed processing to avoid standard library functions)
+            translation_unit = index.parse(file_path, args=compile_args)
             
             if translation_unit is None:
                 print(f"Failed to parse {file_path}")
@@ -77,6 +76,9 @@ class ClangAnalyzer:
             return_type = cursor.result_type.spelling
             function_name = cursor.spelling
             
+            # Get the actual file location from the cursor
+            actual_file = str(cursor.location.file) if cursor.location.file else file_path
+            
             # Extract parameters
             parameters = []
             for i, arg in enumerate(cursor.get_arguments()):
@@ -99,11 +101,11 @@ class ClangAnalyzer:
                 'name': function_name,
                 'return_type': return_type,
                 'parameters': parameters,
-                'file': file_path,
+                'file': actual_file,
                 'line': cursor.location.line,
                 'is_static': is_static,
                 'access_specifier': access_specifier,
-                'language': 'cpp' if file_path.endswith(('.cpp', '.cc', '.cxx')) else 'c',
+                'language': 'cpp' if actual_file.endswith(('.cpp', '.cc', '.cxx')) else 'c',
                 'body': function_body
             }
             

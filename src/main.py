@@ -96,10 +96,16 @@ def should_include_function(func: Dict[str, Any], filter_config: Dict[str, Any],
     """Determine if a function should be included based on filtering rules"""
     function_name = func.get('name', '')
     file_path = func.get('file', '')
+    project_path = project_config.get('path', '')
+    function_body = func.get('body', '')
     
-    # Skip standard library functions
-    if filter_config.get('skip_std_lib', True):
-        if any(path in file_path for path in ['/usr/include', '/usr/lib', '/include/c++']):
+    # Only include functions defined within the project directory
+    if project_path:
+        from pathlib import Path
+        # Convert both paths to absolute for comparison
+        abs_project_path = str(Path(project_path).absolute())
+        abs_file_path = str(Path(file_path).absolute())
+        if not abs_file_path.startswith(abs_project_path):
             return False
     
     # Skip compiler builtins and internal functions
@@ -109,14 +115,18 @@ def should_include_function(func: Dict[str, Any], filter_config: Dict[str, Any],
     
     # Skip operators and special functions
     if filter_config.get('skip_operators', True):
-        if function_name.startswith('operator') or function_name in ['main', 'malloc', 'free']:
+        if function_name.startswith('operator') or function_name in ['main']:
             return False
     
-    # Check project-specific function configurations
-    project_functions = project_config.get('functions', {})
-    if project_functions:
-        # If specific functions are configured, only include those
-        return function_name in project_functions
+    # Skip inline functions (both standard library and project inline functions)
+    if filter_config.get('skip_inline', True):
+        if function_body and 'inline' in function_body:
+            return False
+    
+    # Skip functions from third-party directories
+    if filter_config.get('skip_third_party', True):
+        if '/third_party/' in file_path or '/vendor/' in file_path:
+            return False
     
     # Apply custom include/exclude patterns
     include_patterns = filter_config.get('custom_include_patterns', [])
