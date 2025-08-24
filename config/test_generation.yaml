@@ -48,7 +48,7 @@ projects:
       skip_compiler_builtins: true
       skip_operators: true
       skip_special_functions: true
-      custom_include_patterns: ["hash_table_get"]
+      custom_include_patterns: []
       custom_exclude_patterns: []
 
 # LLM provider configurations
@@ -109,16 +109,19 @@ profiles:
     description: "Quick test generation with minimal coverage"
     max_functions: 3
     test_cases_per_function: 3
+    max_workers: 1  # Sequential processing for quick runs
     timeout: 300  # 5 minutes
     
   comprehensive:
     description: "Comprehensive test generation with full coverage"
     max_functions: 20
     test_cases_per_function: 10
+    max_workers: 3  # Concurrent processing for comprehensive runs
     timeout: 1800  # 30 minutes
     
   custom:
     description: "Custom configuration for specific needs"
     max_functions: null  # No limit
     test_cases_per_function: null  # Use function-specific settings
+    max_workers: 5  # Higher concurrency for custom runs
     timeout: 3600  # 60 minutes

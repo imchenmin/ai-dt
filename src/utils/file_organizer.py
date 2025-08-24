@@ -59,6 +59,17 @@ class TestFileOrganizer:
             'pure_test_code': pure_test_code
         }
     
+    def save_prompt_only(self, function_name: str, prompt: str) -> str:
+        """Save only the prompt without waiting for test generation"""
+        prompts_dir = self.base_dir / "1_prompts"
+        prompts_dir.mkdir(parents=True, exist_ok=True)
+        
+        prompt_path = prompts_dir / f"prompt_{function_name}.txt"
+        with open(prompt_path, 'w', encoding='utf-8') as f:
+            f.write(prompt)
+        
+        return str(prompt_path)
+    
     def _extract_pure_test_code(self, test_code: str) -> str:
         """Extract only the C++ code between ```cpp and ``` markers"""
         if '```cpp' in test_code and '```' in test_code:

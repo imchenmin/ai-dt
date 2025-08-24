@@ -4,6 +4,7 @@ Test generator using LLM for Google Test + MockCpp generation
 
 import logging
 import time
+import concurrent.futures
 from typing import Dict, Any, List
 from pathlib import Path
 from datetime import datetime
@@ -94,14 +95,18 @@ class TestGenerator:
     
     def generate_tests(self, functions_with_context: List[Dict[str, Any]], 
                       output_dir: str = "./generated_tests",
-                      project_name: str = "unknown_project") -> List[Dict[str, Any]]:
+                      project_name: str = "unknown_project",
+                      max_workers: int = 3) -> List[Dict[str, Any]]:
         """Generate tests for multiple functions with organized output structure"""
-        results = []
         
         # Create file organizer with timestamped directory
         file_organizer = TestFileOrganizer(output_dir)
         timestamped_dir = file_organizer.create_timestamped_directory(project_name)
         organized_organizer = TestFileOrganizer(timestamped_dir)
+        
+        # First phase: Generate all prompts and save them immediately
+        logger.info("Phase 1: Generating and saving prompts for all functions...")
+        prompts = []
         
         for func_data in functions_with_context:
             function_info = func_data['function']
@@ -111,40 +116,35 @@ class TestGenerator:
                 logger.info(f"Skipping non-testable function: {function_info['name']}")
                 continue
             
-            # Generate prompt first
+            # Generate prompt
             compressed_context = self.context_compressor.compress_function_context(
                 function_info, context
             )
             prompt = self.context_compressor.format_for_llm_prompt(compressed_context)
             
-            # Generate test
-            result = self.generate_test(function_info, context)
+            # Save prompt immediately
+            prompt_path = organized_organizer.save_prompt_only(function_info['name'], prompt)
+            logger.info(f"Saved prompt for {function_info['name']} to {prompt_path}")
             
-            if result['success']:
-                # Save all files using the organized structure
-                file_info = organized_organizer.organize_test_output(
-                    test_code=result['test_code'],
-                    function_name=function_info['name'],
-                    prompt=prompt,
-                    raw_response=result['test_code']  # For now, use test_code as raw response
-                )
-                result['file_info'] = file_info
-                result['output_path'] = file_info['test_path']
-                logger.info(f"Saved organized test files for {function_info['name']}")
-            else:
-                # For failed generations, still save the prompt for debugging
-                file_info = organized_organizer.organize_test_output(
-                    test_code="",
-                    function_name=function_info['name'],
-                    prompt=prompt,
-                    raw_response=f"Generation failed: {result.get('error', 'Unknown error')}"
-                )
-                result['file_info'] = file_info
-            
-            results.append(result)
-            
-            # Add small delay to avoid rate limiting
-            time.sleep(1)
+            prompts.append({
+                'function_info': function_info,
+                'context': context,
+                'prompt': prompt,
+                'compressed_context': compressed_context,
+                'prompt_path': prompt_path
+            })
+        
+        logger.info(f"Generated and saved {len(prompts)} prompts for LLM processing")
+        
+        # Second phase: Process with LLM using concurrent execution
+        logger.info(f"Phase 2: Processing {len(prompts)} functions with {max_workers} concurrent workers...")
+        
+        if max_workers > 1:
+            # Concurrent processing
+            results = self._process_concurrently(prompts, organized_organizer, max_workers)
+        else:
+            # Sequential processing (backward compatibility)
+            results = self._process_sequentially(prompts, organized_organizer)
         
         # Generate README with generation info
         generation_info = {
@@ -154,11 +154,102 @@ class TestGenerator:
             'model': getattr(self.llm_client, 'model', 'unknown'),
             'total_functions': len(functions_with_context),
             'successful': len([r for r in results if r['success']]),
-            'failed': len([r for r in results if not r['success']])
+            'failed': len([r for r in results if not r['success']]),
+            'concurrent_workers': max_workers if max_workers > 1 else 1
         }
         organized_organizer.generate_readme(generation_info)
         
         return results
+    
+    def _process_sequentially(self, prompts: List[Dict[str, Any]], 
+                            organizer: TestFileOrganizer) -> List[Dict[str, Any]]:
+        """Process prompts sequentially"""
+        results = []
+        
+        for prompt_data in prompts:
+            function_info = prompt_data['function_info']
+            context = prompt_data['context']
+            prompt = prompt_data['prompt']
+            
+            # Generate test
+            result = self.generate_test(function_info, context)
+            
+            # Save results
+            result = self._save_test_result(result, function_info, prompt, organizer)
+            results.append(result)
+            
+            # Add small delay to avoid rate limiting
+            time.sleep(1)
+            
+        return results
+    
+    def _process_concurrently(self, prompts: List[Dict[str, Any]], 
+                             organizer: TestFileOrganizer, max_workers: int) -> List[Dict[str, Any]]:
+        """Process prompts concurrently using thread pool"""
+        results = []
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all tasks
+            future_to_prompt = {
+                executor.submit(self._process_single_function, prompt_data, organizer): prompt_data
+                for prompt_data in prompts
+            }
+            
+            # Collect results as they complete
+            for future in concurrent.futures.as_completed(future_to_prompt):
+                prompt_data = future_to_prompt[future]
+                try:
+                    result = future.result()
+                    results.append(result)
+                    logger.info(f"Completed: {prompt_data['function_info']['name']}")
+                except Exception as e:
+                    logger.error(f"Error processing {prompt_data['function_info']['name']}: {e}")
+                    results.append({
+                        'success': False,
+                        'error': str(e),
+                        'function_name': prompt_data['function_info']['name']
+                    })
+        
+        return results
+    
+    def _process_single_function(self, prompt_data: Dict[str, Any], 
+                               organizer: TestFileOrganizer) -> Dict[str, Any]:
+        """Process a single function (used for concurrent execution)"""
+        function_info = prompt_data['function_info']
+        context = prompt_data['context']
+        prompt = prompt_data['prompt']
+        
+        # Generate test
+        result = self.generate_test(function_info, context)
+        
+        # Save results
+        return self._save_test_result(result, function_info, prompt, organizer)
+    
+    def _save_test_result(self, result: Dict[str, Any], function_info: Dict[str, Any],
+                         prompt: str, organizer: TestFileOrganizer) -> Dict[str, Any]:
+        """Save test results and organize files"""
+        if result['success']:
+            # Save all files using the organized structure
+            file_info = organizer.organize_test_output(
+                test_code=result['test_code'],
+                function_name=function_info['name'],
+                prompt=prompt,
+                raw_response=result['test_code']  # For now, use test_code as raw response
+            )
+            result['file_info'] = file_info
+            result['output_path'] = file_info['test_path']
+            logger.info(f"Saved organized test files for {function_info['name']}")
+        else:
+            # For failed generations, still save the prompt for debugging
+            file_info = organizer.organize_test_output(
+                test_code="",
+                function_name=function_info['name'],
+                prompt=prompt,
+                raw_response=f"Generation failed: {result.get('error', 'Unknown error')}"
+            )
+            result['file_info'] = file_info
+        
+        return result
     
     def _should_generate_test(self, function_info: Dict[str, Any]) -> bool:
         """Determine if test should be generated for this function"""

@@ -232,10 +232,14 @@ def generate_tests_with_config(functions_with_context: List[Dict[str, Any]],
     
     # Generate tests
     project_name = Path(project_path).name
+    # Get max_workers from profile configuration
+    max_workers = project_config.get('max_workers', 3)
+    
     results = test_generator.generate_tests(
         functions_with_context,
         output_dir=output_dir,
-        project_name=project_name
+        project_name=project_name,
+        max_workers=max_workers
     )
     
     # Log generation statistics
@@ -375,6 +379,10 @@ def main():
             config_manager = TestGenerationConfig(args.config_file)
             project_config = config_manager.get_project_config(args.config)
             
+            # Get profile configuration and merge with project config
+            profile_config = config_manager.get_profile_config(args.profile)
+            merged_config = {**project_config, **profile_config}
+            
             # Analyze project functions
             functions_with_context = analyze_project_functions(project_config)
             
@@ -385,7 +393,7 @@ def main():
             # Generate tests
             results = generate_tests_with_config(
                 functions_with_context, 
-                project_config,
+                merged_config,
                 prompt_only=args.prompt_only
             )
             
