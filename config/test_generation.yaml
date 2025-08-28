@@ -48,6 +48,10 @@ projects:
     comp_db: "test_projects/complex_c_project/compile_commands.json"
     description: "Complex C project with data structures, algorithms and memory utilities"
     
+    # Use Dify API for this project
+    llm_provider: "dify"
+    model: "dify-model" # Model is usually set in Dify UI
+    
     # Custom output directory for this project
     output_dir: "./experiment/generated_tests_complex_c"
     filter:
@@ -120,6 +124,13 @@ llm_providers:
       - "claude-3-sonnet" 
       - "claude-3-haiku"
     default_model: "claude-3-sonnet"
+    
+  dify:
+    api_key_env: "DIFY_API_KEY"
+    base_url: "https://api.dify.ai/v1/chat-messages"
+    models:
+      - "dify-model" # Model name is often abstract in Dify
+    default_model: "dify-model"
 
 # Test generation templates
 test_templates:

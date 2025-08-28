@@ -6,7 +6,7 @@ This project is a command-line tool for automatically generating unit tests for 
 
 *   **Programming Language:** Python
 *   **Code Analysis:** Clang, libclang, tree-sitter
-*   **Test Generation:** OpenAI API (GPT models)
+*   **Test Generation:** OpenAI API (GPT models), Dify API (various models)
 *   **Configuration:** YAML
 *   **Dependencies:** See `requirements.txt` for a full list of Python packages.
 
@@ -16,7 +16,7 @@ The tool follows a modular architecture:
 
 *   **`src/parser`:** Handles parsing of the compilation database (`compile_commands.json`) to understand the project's structure and compiler flags.
 *   **`src/analyzer`:** Uses Clang to analyze the C/C++ source code, extract information about functions, and build a context for test generation.
-*   **`src/generator`:** Contains the logic for interacting with the LLM, sending the code context, and generating the unit test files.
+*   **`src/generator`:** Contains the logic for interacting with the LLM, sending the code context, and generating the unit test files. This now includes support for Dify API.
 *   **`src/utils`:** Provides utility functions for file handling, configuration loading, and other common tasks.
 *   **`main.py`:** The main entry point for the command-line tool, orchestrating the parsing, analysis, and generation process.
 
@@ -30,23 +30,32 @@ The tool follows a modular architecture:
     ```
 
 2.  **Set up Environment Variables:**
-    Create a `.env` file by copying the `.env.example` and add your OpenAI API key:
+    Create a `.env` file by copying the `.env.example` and add your OpenAI API key and/or Dify API key:
     ```bash
     cp .env.example .env
-    # Edit .env and add your OPENAI_API_KEY
+    # Edit .env and add your OPENAI_API_KEY and/or DIFY_API_KEY
     ```
 
 ## Running the Tool
 
-The main entry point is `src/main.py`. It likely takes arguments to specify the project to analyze and the output directory for the generated tests.
+The main entry point is `src/main.py`. It takes arguments to specify the project to analyze and the output directory for the generated tests.
 
-**Example Usage (inferred):**
+**Example Usage:**
+
+To run a project defined in `config/test_generation.yaml` (e.g., `complex_c_project`):
 
 ```bash
-python src/main.py --config config/test_generation.yaml
+python3 -m src.main --config complex_c_project
 ```
 
-*TODO: Verify the exact command-line arguments by inspecting `src/main.py`.*
+If using the Dify API, ensure the `DIFY_API_KEY` environment variable is set:
+
+```bash
+export DIFY_API_KEY="your_dify_api_key_here"
+python3 -m src.main --config complex_c_project
+```
+
+*Note: The exact command-line arguments can be inspected by running `python3 -m src.main --help`.*
 
 ## Running Tests
 

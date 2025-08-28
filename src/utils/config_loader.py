@@ -33,6 +33,12 @@ class ConfigLoader:
                 "default_model": "claude-3-sonnet",
                 "base_url": "https://api.anthropic.com/v1",
                 "models": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"]
+            },
+            "dify": {
+                "api_key_env": "DIFY_API_KEY",
+                "default_model": "dify-model",
+                "base_url": "https://api.dify.ai/v1/chat-messages",
+                "models": ["dify-model"]
             }
         }
         

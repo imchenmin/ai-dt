@@ -12,7 +12,8 @@ from datetime import datetime
 from src.utils.context_compressor import ContextCompressor
 from src.utils.file_organizer import TestFileOrganizer
 from src.utils.logging_utils import get_logger
-from .llm_client import LLMClient, MockLLMClient
+from .llm_client import LLMClient
+from .mock_llm_client import MockLLMClient
 
 logger = get_logger(__name__)
 

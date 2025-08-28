@@ -48,6 +48,13 @@ class LLMClient:
                 base_url=self.base_url if self.base_url else "https://api.deepseek.com/v1"
             )
         
+        elif self.provider == "dify":
+            # Dify uses a custom REST API, no specific client library needed
+            if not self.api_key:
+                raise ValueError("API key is required for Dify provider.")
+            self.client = None # Using requests directly
+            self.dify_api_url = self.base_url if self.base_url else "https://api.dify.ai/v1/chat-messages"
+
         elif self.provider == "anthropic":
             # Anthropic client setup would go here
             self.client = None
@@ -79,6 +86,15 @@ class LLMClient:
                     max_tokens=max_tokens,
                     temperature=temperature,
                     language=language
+                )
+            elif self.provider == "dify":
+                return self.error_handler.with_retry(
+                    self._generate_with_dify,
+                    "test generation",
+                    self.provider,
+                    prompt=prompt,
+                    max_tokens=max_tokens,
+                    temperature=temperature
                 )
             elif self.provider == "anthropic":
                 return self._generate_with_anthropic(prompt, max_tokens, temperature, language)
@@ -144,8 +160,61 @@ class LLMClient:
             },
             'model': self.model
         }
-    
-    def _generate_with_anthropic(self, prompt: str, max_tokens: int, temperature: float) -> Dict[str, Any]:
+
+    def _generate_with_dify(self, prompt: str, max_tokens: int, temperature: float) -> Dict[str, Any]:
+        """Generate test using Dify API"""
+        headers = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        # Note: Dify's API has different parameters.
+        # `max_tokens` and `temperature` are not directly supported in the standard chat-messages endpoint.
+        # These would typically be configured in the Dify application settings for the agent.
+        # We include them in the call signature for consistency but they are not used here.
+        data = {
+            "inputs": {},
+            "query": prompt,
+            "response_mode": "blocking",  # Use "blocking" to get the full response at once
+            "user": "ai-dt-user" # A unique identifier for the user
+        }
+
+        try:
+            response = requests.post(self.dify_api_url, headers=headers, json=data, timeout=300)
+            response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+            
+            response_data = response.json()
+            
+            # Defensive checks for response format
+            if 'answer' not in response_data:
+                raise LLMError(f"Dify API response missing 'answer' key. Response: {response_data}", provider="dify")
+
+            # Dify response may not include token usage details in the same way as OpenAI.
+            # We'll provide default values if they are not present.
+            usage = response_data.get('metadata', {}).get('usage', {})
+            prompt_tokens = usage.get('prompt_tokens', 0)
+            completion_tokens = usage.get('completion_tokens', 0)
+            total_tokens = usage.get('total_tokens', prompt_tokens + completion_tokens)
+
+            return {
+                'success': True,
+                'test_code': response_data['answer'].strip(),
+                'usage': {
+                    'prompt_tokens': prompt_tokens,
+                    'completion_tokens': completion_tokens,
+                    'total_tokens': total_tokens
+                },
+                'model': response_data.get('model', 'dify_model') # Extract model if available
+            }
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Dify API request failed: {e}")
+            raise LLMError(f"Network error calling Dify API: {e}", provider="dify") from e
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to decode Dify API JSON response: {response.text}")
+            raise LLMError(f"Invalid JSON response from Dify API.", provider="dify") from e
+
+    def _generate_with_anthropic(self, prompt: str, max_tokens: int, temperature: float, language: str = "c") -> Dict[str, Any]:
         """Generate test using Anthropic API (placeholder)"""
         # This would be implemented when Anthropic API is available
         return {
@@ -155,7 +224,7 @@ class LLMClient:
             'usage': {}
         }
     
-    def _generate_with_local(self, prompt: str, max_tokens: int, temperature: float) -> Dict[str, Any]:
+    def _generate_with_local(self, prompt: str, max_tokens: int, temperature: float, language: str = "c") -> Dict[str, Any]:
         """Generate test using local model (placeholder)"""
         # This would be implemented for local model inference
         return {
@@ -164,196 +233,6 @@ class LLMClient:
             'test_code': '',
             'usage': {}
         }
-    
-    # File saving functionality has been moved to TestFileOrganizer
-    # in src/utils/file_organizer.py for better separation of concerns
-
-
-class MockLLMClient:
-    """Mock LLM client for testing without real API calls"""
-    
-    def __init__(self):
-        self.provider = "mock"
-    
-    def generate_test(self, prompt: str, max_tokens: int = 2000, 
-                     temperature: float = 0.3, **kwargs) -> Dict[str, Any]:
-        """Generate mock test code"""
-        # Extract function name from prompt
-        function_name = "unknown"
-        if "函数签名:" in prompt:
-            lines = prompt.split('\n')
-            for line in lines:
-                if line.startswith("函数签名:"):
-                    # Extract function name from signature like "int add(int a, int b)"
-                    signature = line.replace("函数签名:", "").strip()
-                    # Split by space and take the second word (function name)
-                    parts = signature.split()
-                    if len(parts) >= 2:
-                        # Get the part before '(' which should be the function name
-                        func_part = parts[1].split('(')[0]
-                        function_name = func_part
-                    break
-        
-        # Generate mock test code based on function info
-        test_code = self._generate_mock_test_code(function_name, prompt)
-        
-        return {
-            'success': True,
-            'test_code': test_code,
-            'usage': {
-                'prompt_tokens': len(prompt) // 4,
-                'completion_tokens': len(test_code) // 4,
-                'total_tokens': (len(prompt) + len(test_code)) // 4
-            },
-            'model': 'mock-gpt-3.5-turbo'
-        }
-    
-    def _generate_mock_test_code(self, function_name: str, prompt: str) -> str:
-        """Generate realistic mock test code"""
-        # Debug: log what function name we received
-        logger.debug(f"Generating test for function: '{function_name}'")
-        
-        if "divide" in function_name.lower():
-            return self._generate_divide_test()
-        elif "add" in function_name.lower():
-            return self._generate_add_test()
-        elif "multiply" in function_name.lower():
-            return self._generate_multiply_test()
-        elif "subtract" in function_name.lower():
-            return self._generate_subtract_test()
-        else:
-            return self._generate_generic_test(function_name)
-    
-    def _generate_divide_test(self) -> str:
-        return """#include <gtest/gtest.h>
-#include "math_utils.h"
-
-TEST(MathUtilsTest, DivideNormalCases) {
-    EXPECT_FLOAT_EQ(divide(10.0f, 2.0f), 5.0f);
-    EXPECT_FLOAT_EQ(divide(1.0f, 4.0f), 0.25f);
-    EXPECT_FLOAT_EQ(divide(-10.0f, 2.0f), -5.0f);
-}
-
-TEST(MathUtilsTest, DivideByZero) {
-    EXPECT_FLOAT_EQ(divide(5.0f, 0.0f), 0.0f);
-    EXPECT_FLOAT_EQ(divide(-5.0f, 0.0f), 0.0f);
-    EXPECT_FLOAT_EQ(divide(0.0f, 0.0f), 0.0f);
-}
-
-TEST(MathUtilsTest, DivideEdgeCases) {
-    EXPECT_FLOAT_EQ(divide(0.0f, 5.0f), 0.0f);
-    EXPECT_FLOAT_EQ(divide(FLT_MAX, 2.0f), FLT_MAX / 2.0f);
-    EXPECT_FLOAT_EQ(divide(FLT_MIN, 2.0f), FLT_MIN / 2.0f);
-}
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}"""
-    
-    def _generate_add_test(self) -> str:
-        return """#include <gtest/gtest.h>
-#include "math_utils.h"
-
-TEST(MathUtilsTest, AddNormalCases) {
-    EXPECT_EQ(add(2, 3), 5);
-    EXPECT_EQ(add(-2, 3), 1);
-    EXPECT_EQ(add(0, 0), 0);
-}
-
-TEST(MathUtilsTest, AddEdgeCases) {
-    EXPECT_EQ(add(INT_MAX, 1), INT_MIN);  // Overflow behavior
-    EXPECT_EQ(add(INT_MIN, -1), INT_MAX); // Underflow behavior
-    EXPECT_EQ(add(INT_MAX, INT_MIN), -1);
-}
-
-TEST(MathUtilsTest, AddCommutative) {
-    EXPECT_EQ(add(5, 3), add(3, 5));
-    EXPECT_EQ(add(-5, 3), add(3, -5));
-}
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}"""
-    
-    def _generate_multiply_test(self) -> str:
-        return """#include <gtest/gtest.h>
-#include "math_utils.h"
-
-// Mock for add function since multiply calls add
-int add(int a, int b) {
-    return a + b;
-}
-
-TEST(MathUtilsTest, MultiplyNormalCases) {
-    EXPECT_EQ(multiply(2, 3), 6);
-    EXPECT_EQ(multiply(5, 0), 0);
-    EXPECT_EQ(multiply(-2, 3), -6);
-    EXPECT_EQ(multiply(-2, -3), 6);
-}
-
-TEST(MathUtilsTest, MultiplyEdgeCases) {
-    EXPECT_EQ(multiply(INT_MAX, 2), -2);  // Overflow behavior
-    EXPECT_EQ(multiply(INT_MIN, 2), 0);   // Underflow behavior
-    EXPECT_EQ(multiply(0, INT_MAX), 0);
-}
-
-TEST(MathUtilsTest, MultiplyWithZero) {
-    EXPECT_EQ(multiply(0, 5), 0);
-    EXPECT_EQ(multiply(5, 0), 0);
-    EXPECT_EQ(multiply(0, 0), 0);
-}
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}"""
-    
-    def _generate_subtract_test(self) -> str:
-        return """#include <gtest/gtest.h>
-#include "math_utils.h"
-
-TEST(MathUtilsTest, SubtractNormalCases) {
-    EXPECT_EQ(subtract(5, 3), 2);
-    EXPECT_EQ(subtract(3, 5), -2);
-    EXPECT_EQ(subtract(0, 0), 0);
-    EXPECT_EQ(subtract(-5, -3), -2);
-}
-
-TEST(MathUtilsTest, SubtractEdgeCases) {
-    EXPECT_EQ(subtract(INT_MAX, -1), INT_MIN);  // Overflow
-    EXPECT_EQ(subtract(INT_MIN, 1), INT_MAX);   // Underflow
-    EXPECT_EQ(subtract(INT_MAX, INT_MAX), 0);
-}
-
-TEST(MathUtilsTest, SubtractCommutative) {
-    EXPECT_EQ(subtract(5, 3), -(subtract(3, 5)));
-}
-
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}"""
-    
-    def _generate_generic_test(self, function_name: str) -> str:
-        return f"""#include <gtest/gtest.h>
-
-// Generated test for {function_name}
-TEST(GeneratedTest, {function_name}BasicTest) {{
-    // Basic functionality test
-    // TODO: Add specific test cases
-}}
-
-TEST(GeneratedTest, {function_name}EdgeCases) {{
-    // Edge case tests
-    // TODO: Add boundary tests
-}}
-
-int main(int argc, char **argv) {{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}}"""
     
     # File saving functionality has been moved to TestFileOrganizer
     # in src/utils/file_organizer.py for better separation of concerns
