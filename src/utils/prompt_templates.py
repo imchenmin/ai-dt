@@ -23,7 +23,7 @@ class PromptTemplates:
         return PromptTemplates.SYSTEM_PROMPTS.get(language, PromptTemplates.SYSTEM_PROMPTS['default'])
     
     @staticmethod
-    def generate_test_prompt(compressed_context: Dict[str, Any]) -> str:
+    def generate_test_prompt(compressed_context: Dict[str, Any], existing_fixture_code: str = None, suite_name: str = None) -> str:
         """Generate comprehensive test generation prompt with a structured approach."""
         target = compressed_context['target_function']
         deps = compressed_context['dependencies']
@@ -177,3 +177,4 @@ class PromptTemplates:
             return True
             
         return False
+    

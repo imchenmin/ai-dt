@@ -12,6 +12,9 @@ from datetime import datetime
 from src.utils.context_compressor import ContextCompressor
 from src.utils.file_organizer import TestFileOrganizer
 from src.utils.logging_utils import get_logger
+from src.utils.prompt_templates import PromptTemplates
+from src.utils.fixture_finder import FixtureFinder
+from src.utils.test_aggregator import TestFileAggregator
 from .llm_client import LLMClient
 from .mock_llm_client import MockLLMClient
 
@@ -25,6 +28,8 @@ class TestGenerator:
                  base_url: str = None, model: str = None,
                  max_retries: int = 3, retry_delay: float = 1.0):
         self.context_compressor = ContextCompressor()
+        self.fixture_finder = FixtureFinder()
+        self.aggregator = TestFileAggregator()
         
         if llm_provider == "mock":
             self.llm_client = MockLLMClient()
@@ -98,10 +103,13 @@ class TestGenerator:
             }
     
     def generate_tests(self, functions_with_context: List[Dict[str, Any]], 
-                      output_dir: str = "./generated_tests",
-                      project_name: str = "unknown_project",
+                      project_config: Dict[str, Any],
                       max_workers: int = 3) -> List[Dict[str, Any]]:
         """Generate tests for multiple functions with organized output structure"""
+        
+        project_name = project_config.get("name", "unknown_project")
+        output_dir = project_config.get("output_dir", "./generated_tests")
+        unit_test_directory_path = project_config.get("unit_test_directory_path")
         
         # Create file organizer with timestamped directory
         file_organizer = TestFileOrganizer(output_dir)
@@ -120,11 +128,31 @@ class TestGenerator:
                 logger.info(f"Skipping non-testable function: {function_info['name']}")
                 continue
             
-            # Generate prompt
+            # New logic for fixture finding and prompt generation
+            # 1. Determine suite name and target file path
+            source_file = Path(function_info.get('file', 'unknown'))
+            suite_name = f"{source_file.stem.replace('.', '_')}Test"
+            target_filepath = Path(timestamped_dir) / f"test_{source_file.stem}.cpp"
+
+            # 2. Find existing fixture
+            existing_fixture_code = None
+            if unit_test_directory_path:
+                logger.info(f"Searching for fixture '{suite_name}' in {unit_test_directory_path}")
+                existing_fixture_code = self.fixture_finder.find_fixture_definition(
+                    suite_name, unit_test_directory_path
+                )
+                if existing_fixture_code:
+                    logger.info(f"Found existing fixture for {suite_name}")
+
+            # 3. Generate prompt using the template directly
             compressed_context = self.context_compressor.compress_function_context(
                 function_info, context
             )
-            prompt = self.context_compressor.format_for_llm_prompt(compressed_context)
+            prompt = PromptTemplates.generate_test_prompt(
+                compressed_context,
+                existing_fixture_code=existing_fixture_code,
+                suite_name=suite_name
+            )
             
             # Save prompt immediately
             prompt_path = organized_organizer.save_prompt_only(function_info['name'], prompt)
@@ -135,7 +163,8 @@ class TestGenerator:
                 'context': context,
                 'prompt': prompt,
                 'compressed_context': compressed_context,
-                'prompt_path': prompt_path
+                'prompt_path': prompt_path,
+                'target_filepath': str(target_filepath) # Pass target path for aggregation
             })
         
         logger.info(f"Generated and saved {len(prompts)} prompts for LLM processing")
@@ -173,13 +202,13 @@ class TestGenerator:
         for prompt_data in prompts:
             function_info = prompt_data['function_info']
             context = prompt_data['context']
-            prompt = prompt_data['prompt']
             
             # Generate test
             result = self.generate_test(function_info, context)
             
             # Save results
-            result = self._save_test_result(result, function_info, prompt, organizer)
+            target_filepath = prompt_data['target_filepath']
+            result = self._save_test_result(result, function_info, "", organizer, target_filepath)
             results.append(result)
             
             # Add small delay to avoid rate limiting
@@ -221,28 +250,32 @@ class TestGenerator:
         """Process a single function (used for concurrent execution)"""
         function_info = prompt_data['function_info']
         context = prompt_data['context']
-        prompt = prompt_data['prompt']
         
         # Generate test
         result = self.generate_test(function_info, context)
         
         # Save results
-        return self._save_test_result(result, function_info, prompt, organizer)
+        target_filepath = prompt_data['target_filepath']
+        return self._save_test_result(result, function_info, "", organizer, target_filepath)
     
     def _save_test_result(self, result: Dict[str, Any], function_info: Dict[str, Any],
-                         prompt: str, organizer: TestFileOrganizer) -> Dict[str, Any]:
+                         prompt: str, organizer: TestFileOrganizer, target_filepath: str) -> Dict[str, Any]:
         """Save test results and organize files"""
         if result['success']:
-            # Save all files using the organized structure
+            # Aggregate the test code into the target file
+            self.aggregator.aggregate(target_filepath, result['test_code'])
+            logger.info(f"Aggregated test for {function_info['name']} into {target_filepath}")
+
+            # Save prompt and raw response, but not the individual test file
             file_info = organizer.organize_test_output(
-                test_code=result['test_code'],
+                test_code="", # Pass empty string to avoid creating individual test file
                 function_name=function_info['name'],
                 prompt=prompt,
-                raw_response=result['test_code']  # For now, use test_code as raw response
+                raw_response=result['test_code']
             )
             result['file_info'] = file_info
-            result['output_path'] = file_info['test_path']
-            logger.info(f"Saved organized test files for {function_info['name']}")
+            result['output_path'] = target_filepath # Report the aggregated file path
+            logger.info(f"Saved debug files for {function_info['name']}")
         else:
             # For failed generations, still save the prompt for debugging
             file_info = organizer.organize_test_output(
@@ -267,15 +300,9 @@ class TestGenerator:
         return True
     
     def generate_summary_report(self, results: List[Dict[str, Any]]) -> str:
-        """Generate summary report of test generation with new file structure"""
+        """Generate summary report of test generation"""
         successful = [r for r in results if r['success']]
         failed = [r for r in results if not r['success']]
-        
-        # Find the base output directory from the first successful result
-        base_output_dir = None
-        if successful and 'file_info' in successful[0]:
-            test_path = successful[0]['file_info']['test_path']
-            base_output_dir = str(Path(test_path).parent.parent)
         
         report = [
             "=== Test Generation Summary ===",
@@ -283,47 +310,5 @@ class TestGenerator:
             f"Successful generations: {len(successful)}",
             f"Failed generations: {len(failed)}",
         ]
-        
-        if base_output_dir:
-            report.extend([
-                "",
-                "Output Directory Structure:",
-                f"{base_output_dir}/",
-                "├── 1_prompts/       # Input prompts sent to LLM",
-                "├── 2_raw_responses/ # Raw LLM responses", 
-                "├── 3_pure_tests/    # Extracted pure C++ test code",
-                "└── README.md        # Generation metadata"
-            ])
-        
-        report.extend(["", "Successful tests:"])
-        
-        for result in successful:
-            if 'file_info' in result:
-                file_info = result['file_info']
-                report.append(f"  - {result['function_name']}: "
-                            f"{result['test_length']} chars, "
-                            f"saved to {file_info['test_path']}")
-            else:
-                report.append(f"  - {result['function_name']}: "
-                            f"{result['test_length']} chars")
-        
-        if failed:
-            report.extend(["", "Failed generations:"])
-            for result in failed:
-                error_msg = result.get('error', 'Unknown error')
-                if 'file_info' in result:
-                    file_info = result['file_info']
-                    report.append(f"  - {result['function_name']}: {error_msg} "
-                                f"(prompt saved to {file_info['prompt_path']})")
-                else:
-                    report.append(f"  - {result['function_name']}: {error_msg}")
-        
-        # Add token usage summary
-        total_tokens = sum(
-            r.get('usage', {}).get('total_tokens', 0) 
-            for r in successful
-        )
-        if total_tokens > 0:
-            report.extend(["", f"Total tokens used: {total_tokens}"])
         
         return '\n'.join(report)

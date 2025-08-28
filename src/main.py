@@ -247,10 +247,16 @@ def generate_tests_with_config(functions_with_context: List[Dict[str, Any]],
     # Get max_workers from profile configuration
     max_workers = project_config.get('max_workers', 3)
     
+    # Create project config dictionary for the new API
+    project_config_dict = {
+        "name": project_name,
+        "output_dir": output_dir,
+        "unit_test_directory_path": project_config.get("unit_test_directory_path")
+    }
+    
     results = test_generator.generate_tests(
         functions_with_context,
-        output_dir=output_dir,
-        project_name=project_name,
+        project_config_dict,
         max_workers=max_workers
     )
     

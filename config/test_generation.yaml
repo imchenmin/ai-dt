@@ -46,6 +46,7 @@ projects:
   complex_c_project:
     path: "test_projects/complex_c_project"
     comp_db: "test_projects/complex_c_project/compile_commands.json"
+    unit_test_directory_path: "test_projects/complex_c_project/tests" # New optional path
     description: "Complex C project with data structures, algorithms and memory utilities"
     
     # Use Dify API for this project
