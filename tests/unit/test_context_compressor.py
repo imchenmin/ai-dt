@@ -49,7 +49,7 @@ def test_compress_target_function():
     assert len(compressed['parameters']) == 2
     assert compressed['location'] == '/path/to/file.c:10'
     assert compressed['language'] == 'c'
-    assert compressed['body_preview'] == function_info['body'][:300]
+    assert compressed['body'] == function_info['body']
     assert not compressed['is_static']
 
 

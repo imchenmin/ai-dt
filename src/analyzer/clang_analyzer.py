@@ -227,19 +227,29 @@ class ClangAnalyzer:
                     params = ', '.join(param_decls)
                     declaration = f"{called_func_def_cursor.result_type.spelling} {called_func_name}({params});"
                     is_mockable = called_func_def_cursor.storage_class != clang.cindex.StorageClass.STATIC
+                    
+                    # Extract full function body for static functions to help understand implementation
+                    function_body = ""
+                    if called_func_def_cursor.storage_class == clang.cindex.StorageClass.STATIC:
+                        function_body = self._extract_function_body(called_func_def_cursor)
+                        
                 except Exception:
                     declaration = f"{called_func_def_cursor.result_type.spelling} {called_func_name}(...);" # Fallback
                     is_mockable = True # Assume mockable on error
+                    function_body = ""
             else:
                 # Fallback for functions not in our map (e.g., standard library)
                 declaration = f"{cursor.referenced.result_type.spelling} {called_func_name}(...);"
                 is_mockable = True # Assume external functions are mockable
+                function_body = ""
 
             func_info = {
                 'name': called_func_name,
                 'declaration': declaration,
                 'is_mockable': is_mockable,
                 'location': f"{cursor.referenced.location.file.name if cursor.referenced.location.file else 'unknown'}:{cursor.referenced.location.line}",
+                'is_static': called_func_def_cursor.storage_class == clang.cindex.StorageClass.STATIC if called_func_def_cursor else False,
+                'function_body': function_body
             }
             if not any(d['name'] == func_info['name'] for d in called_functions):
                 called_functions.append(func_info)

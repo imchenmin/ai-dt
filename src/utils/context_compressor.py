@@ -61,7 +61,7 @@ class ContextCompressor:
                 {'name': p['name'], 'type': p['type']} 
                 for p in function_info['parameters']
             ],
-            'body_preview': function_info['body'][:300],  # First 300 chars
+            'body': function_info['body'],  # Keep full function body
             'location': f"{function_info['file']}:{function_info['line']}",
             'language': function_info.get('language', 'c'),
             'is_static': function_info.get('is_static', False),
@@ -108,6 +108,12 @@ class ContextCompressor:
                 macro_definitions.append(macro_def_map[macro_name])
         
         # Extract definitions for selected data structures
+
+        # Extract function bodies for static functions to help understand implementation
+        static_function_definitions = []
+        for func in selected_functions:
+            if func.get("is_static", False) and func.get("function_body"):
+                static_function_definitions.append(func["function_body"])
         struct_definitions = []
         struct_map = {s['name']: s for s in data_structs}
         for struct_name in selected_struct_names:
@@ -119,7 +125,7 @@ class ContextCompressor:
             'macros': selected_macro_names,
             'macro_definitions': macro_definitions,
             'data_structures': selected_struct_names,
-            'dependency_definitions': struct_definitions
+            'dependency_definitions': struct_definitions + static_function_definitions
         }
     
     def _compress_usage_patterns(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -211,10 +217,8 @@ class ContextCompressor:
     
     def _apply_compression_level_1(self, compressed_context: Dict[str, Any]) -> Dict[str, Any]:
         """Level 1 compression: Reduce non-critical content"""
-        # Reduce function body preview
-        if 'target_function' in compressed_context:
-            compressed_context['target_function']['body_preview'] = \
-                compressed_context['target_function']['body_preview'][:200]
+        # Reduce function body preview - preserve full body for target function
+        # Target function body is critical and should not be truncated
         
         # Reduce call site context
         if 'usage_patterns' in compressed_context:
@@ -253,10 +257,8 @@ class ContextCompressor:
     
     def _apply_compression_level_3(self, compressed_context: Dict[str, Any]) -> Dict[str, Any]:
         """Level 3 compression: Aggressive reduction"""
-        # Minimal function body
-        if 'target_function' in compressed_context:
-            compressed_context['target_function']['body_preview'] = \
-                compressed_context['target_function']['body_preview'][:100]
+        # Minimal function body - preserve full body for target function
+        # Target function body is critical and should not be truncated
         
         # Remove usage patterns if still too large
         if 'usage_patterns' in compressed_context:

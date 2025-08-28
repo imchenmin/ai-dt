@@ -45,7 +45,7 @@ class PromptTemplates:
             f"*   **函数签名:** `{target['signature']}`",
             f"*   **函数体:**",
             f"    ```{language_display.lower()}",
-            target['body_preview'],
+            target['body'],
             "    ```",
             "",
             "# 3. 上下文与依赖 (Context & Dependencies)"
