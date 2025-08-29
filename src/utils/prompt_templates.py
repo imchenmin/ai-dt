@@ -125,6 +125,16 @@ class PromptTemplates:
         
 
         prompt_parts.extend(mockcpp_guidance)
+        # Get filename for test class naming - handle paths with line numbers like "hash_table.c:145"
+        import os
+        import re
+        
+        full_path = target['location']
+        # Remove line number if present (e.g., "hash_table.c:145" -> "hash_table.c")
+        clean_path = re.sub(r':\d+$', '', full_path)
+        filename = os.path.basename(clean_path)  # Get just the filename with extension
+        filename_without_ext = os.path.splitext(filename)[0]  # Remove extension
+        
         prompt_parts.extend([
             "4.  **核心测试场景:",
             "    *   **正常流程:** 测试函数在典型、有效输入下的行为。",
@@ -134,11 +144,40 @@ class PromptTemplates:
             "    *   使用 Google Test 提供的断言宏（如 `EXPECT_EQ`, `ASSERT_TRUE`）来验证结果。",
             "    *   如果使用了 Mock，请使用 `EXPECT_CALL` 来验证与依赖项的交互。",
             "",
-            "# 5. 指令与输出格式 (Instructions & Output Format)",
+            "# 5. 代码结构与命名规范 (Code Structure & Naming Conventions)",
+            f"1.  **测试类命名:** 使用 `{filename_without_ext}_test` 作为测试类名",
+            f"2.  **测试用例命名:** 使用 `TEST_F({filename_without_ext}_test, 函数名_When_条件_Should_期望结果)` 格式",
+            "    *   例如: `TEST_F(utils_test, calculate_sum_When_ValidInputs_Should_ReturnCorrectSum)`",
+            "    *   例如: `TEST_F(utils_test, calculate_sum_When_NullPointer_Should_ReturnError)`",
+            "3.  **数据隔离原则:**",
+            "    *   **最小化类成员变量:** 避免在测试类中定义不必要的共用成员变量",
+            "    *   **局部变量优先:** 每个测试用例应该尽可能使用局部变量，避免依赖类成员",
+            "    *   **独立测试数据:** 每个测试用例应该有自己独立的测试数据，避免测试间的数据冲突",
+            "    *   **仅在必要时共享:** 只有当多个测试用例确实需要相同的复杂初始化时，才考虑使用SetUp()和成员变量",
+            "4.  **推荐的测试类结构:**",
+            "    ```cpp",
+            f"    class {filename_without_ext}_test : public ::testing::Test {{",
+            "    protected:",
+            "        void SetUp() override {",
+            "            // 仅在确实需要时添加共同的初始化代码",
+            "            // 大多数情况下可以为空",
+            "        }",
+            "        void TearDown() override {",
+            "            GlobalMockObject::verify();",
+            "        }",
+            "        // 避免添加成员变量，除非多个测试确实需要相同的复杂对象",
+            "    };",
+            "    ```",
+            "",
+            "# 6. 指令与输出格式 (Instructions & Output Format)",
             "1.  **思维链 (Chain of Thought):** 在编写代码之前，请先在心中构思或以注释形式列出你计划实现的测试用例大纲。",
             "2.  **输出单一完整文件:** 生成一个独立的、完整的 C++ 测试文件 (`.cpp`)。",
             "    *   不要包含 `main` 函数。",
             "    *   确保包含所有必要的头文件 (`gtest/gtest.h`, `MockCpp/MockCpp.h`, 以及被测函数和其依赖的头文件)。",
+            "3.  **数据隔离实践:**",
+            "    *   优先在每个TEST_F内部定义局部变量",
+            "    *   避免使用类成员变量，除非确实需要跨测试共享复杂对象",
+            "    *   每个测试用例应该独立运行，不依赖其他测试的执行顺序或状态",
             "",
             "请现在开始生成你的测试代码:",
             f"```{language_display.lower()}"
@@ -154,15 +193,22 @@ class PromptTemplates:
         # Add memory-specific guidance
         memory_guidance = """
 
-# 内存函数特别指导
+# 7. 内存函数特别指导 (Memory Function Specific Guidance)
 此函数涉及内存管理，请特别注意：
-1. 测试内存分配和释放的正确性
-2. 验证空指针的安全处理
-3. 避免测试未定义行为（如重复释放）
-4. 确保测试用例不会导致内存泄漏
-5. 对于C++的delete/delete[]操作，验证异常安全
+1. **内存安全测试:** 测试内存分配和释放的正确性
+2. **空指针处理:** 验证空指针的安全处理，每个测试用例内部创建独立的指针变量
+3. **避免未定义行为:** 避免测试未定义行为（如重复释放），每个测试用例使用独立的内存对象
+4. **防止内存泄漏:** 确保测试用例不会导致内存泄漏，在TEST_F内部进行完整的资源管理
+5. **异常安全:** 对于C++的delete/delete[]操作，验证异常安全
+6. **数据隔离:** 每个内存测试用例应该使用独立的内存块，避免在类成员中共享指针
 
-请生成安全、可靠的测试用例，避免危险的测试模式。
+**内存测试最佳实践:**
+- 在每个TEST_F内部分配和释放内存
+- 不要在类成员变量中存储指针
+- 每个测试用例独立管理自己的内存资源
+- 使用局部变量跟踪内存状态
+
+请生成安全、可靠且数据隔离的测试用例。
 """
         
         return base_prompt + memory_guidance
