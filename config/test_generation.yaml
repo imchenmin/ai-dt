@@ -25,6 +25,12 @@ defaults:
     custom_include_patterns: []
     custom_exclude_patterns: []
 
+  # Context compression options
+  context_compression:
+    enabled: true  # Enable/disable context compression
+    compression_level: 1  # Compression level: 0=minimal, 1=balanced, 2=aggressive
+    max_context_size: null  # Optional max context size override
+
 # Project-specific configurations
 projects:
   # Simple C project

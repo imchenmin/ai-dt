@@ -86,10 +86,10 @@ class PromptTemplates:
             "    *   **正确语法示例 (不要使用Google Mock语法):",
             "        ```cpp",
             "        // 正确: MockCpp链式调用",
-            "        MOCKER(malloc)",
+            "        MOCKER(custom_function)",
             "            .stubs()",
-            "            .with(eq(sizeof(LinkedList)))",
-            "            .will(returnValue(&fake_list));",
+            "            .with(eq(42))",
+            "            .will(returnValue(100));",
             "        ",
             "        // 正确: 带调用次数验证",
             "        MOCKER(create_node)",
@@ -102,10 +102,16 @@ class PromptTemplates:
             "        ```",
             "    *   **核心方法:",
             "        - `.stubs()` - 不校验调用次数",
+            "        - `.defaults()` - 定义默认行为，优先级最低",
             "        - `.expects(times)` - 校验调用次数 (`once()/never()/exactly(n)/atLeast(n)/atMost(n)`)",
             "        - `.with(constraints)` - 参数约束 (`eq(v)/neq(v)/any()/spy(var)/outBound(var)/outBoundP(ptr,size)`)",
             "        - `.will(behavior)` - 函数行为 (`returnValue(v)/returnObjectList(v1,v2)/repeat(v,t)/ignoreReturnValue()/throws(e)`)",
             "    *   **验证:** 在teardown中使用 `GlobalMockObject::verify()`",
+            "    *   **重要限制:**"
+            "        - **不能Mock系统函数**: 如 `fabs`, `strcmp`, `malloc`, `free` 等标准库函数"
+            "        - **不能Mock可变参数函数**: 如 `printf`, `scanf` 等"
+            "        - **不能Mock内联函数**: 编译器内联优化的函数"
+            "        - **只能Mock自定义函数**: 优先Mock项目内的辅助函数和工具函数"
             "    *   **最佳实践:**",
             "        - 使用`MOCKER(function)`MockC函数和静态成员函数",
             "        - 使用`MockObject<Class>obj;MOCK_METHOD(obj,method)`Mock类成员函数",
@@ -114,6 +120,7 @@ class PromptTemplates:
             "        - 优先Mock自定义辅助函数和工具函数",
             "        - 使用`.id()`和`.before()/.after()`进行调用顺序验证",
             "        - 使用`.with()`进行参数验证和输出参数设置"
+            "        - **指针参数**: 使用 `outBoundP(ptr, size)` 而不是 `outBound(var)` 设置指针输出参数"
         ]
         
 

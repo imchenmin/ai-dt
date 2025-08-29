@@ -68,6 +68,13 @@ class ConfigManager:
             'custom_include_patterns': [],
             'custom_exclude_patterns': []
         })
+
+        # Set default context compression
+        defaults.setdefault('context_compression', {
+            'enabled': True,
+            'compression_level': 1,
+            'max_context_size': None
+        })
         
         # Set default profiles
         profiles = config['profiles']

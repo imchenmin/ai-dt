@@ -12,7 +12,8 @@ class ContextCompressor:
     """Compresses analysis context for LLM consumption"""
     
     def __init__(self, max_context_size: int = None, 
-                 llm_provider: str = "openai", llm_model: str = "gpt-3.5-turbo"):
+                 llm_provider: str = "openai", llm_model: str = "gpt-3.5-turbo",
+                 enabled: bool = True, compression_level: int = 1):
         """
         Initialize context compressor with intelligent token management
         
@@ -20,9 +21,13 @@ class ContextCompressor:
             max_context_size: Maximum context size in characters (for backward compatibility)
             llm_provider: LLM provider name (openai, deepseek, mock)
             llm_model: Specific model name for token counting
+            enabled: Whether context compression is enabled
+            compression_level: Compression level (0=minimal, 1=balanced, 2=aggressive)
         """
         self.llm_provider = llm_provider
         self.llm_model = llm_model
+        self.enabled = enabled
+        self.compression_level = max(0, min(2, compression_level))  # Clamp to 0-2
         self.token_counter = create_token_counter(llm_provider, llm_model)
         
         # For backward compatibility, use provided size or calculate from token limit
@@ -40,6 +45,24 @@ class ContextCompressor:
         
         Uses token counting and importance-based ranking to optimize context selection
         """
+        # If compression is disabled, return full uncompressed context
+        if not self.enabled:
+            return {
+                'target_function': self._compress_target_function(function_info),
+                'dependencies': {
+                    'called_functions': full_context.get('called_functions', []),
+                    'macros': full_context.get('macros_used', []),
+                    'macro_definitions': full_context.get('macro_definitions', []),
+                    'data_structures': full_context.get('data_structures', []),
+                    'dependency_definitions': []  # Will be populated below
+                },
+                'usage_patterns': full_context.get('call_sites', []),
+                'compilation_info': {
+                    'key_flags': full_context.get('compilation_flags', []),
+                    'total_flags_count': len(full_context.get('compilation_flags', []))
+                }
+            }
+        
         # First pass: basic compression with importance ranking
         compressed = {
             'target_function': self._compress_target_function(function_info),
@@ -95,10 +118,17 @@ class ContextCompressor:
         ranked_structs = ranker.rank_data_structures(data_structs)
         ranked_macros = ranker.rank_macros(macros, macro_defs)
         
-        # Select top dependencies based on importance (use names for macro/struct selection)
-        selected_functions = select_top_dependencies(ranked_functions, max_count=5)
-        selected_struct_names = select_top_dependency_names(ranked_structs, max_count=3)
-        selected_macro_names = select_top_dependency_names(ranked_macros, max_count=4)
+        # Select top dependencies based on compression level
+        if self.compression_level == 0:  # Minimal compression
+            func_count, struct_count, macro_count = 8, 5, 6
+        elif self.compression_level == 1:  # Balanced compression (default)
+            func_count, struct_count, macro_count = 5, 3, 4
+        else:  # Aggressive compression
+            func_count, struct_count, macro_count = 3, 2, 2
+        
+        selected_functions = select_top_dependencies(ranked_functions, max_count=func_count)
+        selected_struct_names = select_top_dependency_names(ranked_structs, max_count=struct_count)
+        selected_macro_names = select_top_dependency_names(ranked_macros, max_count=macro_count)
         
         # Extract definitions for selected macros
         macro_definitions = []
@@ -147,12 +177,22 @@ class ContextCompressor:
                 sites_by_file[file] = []
             sites_by_file[file].append(site)
         
-        # Select up to 2 representative call sites from different files
+        # Select representative call sites based on compression level
+        if self.compression_level == 0:  # Minimal compression
+            max_sites = 4
+            context_length = 300
+        elif self.compression_level == 1:  # Balanced compression (default)
+            max_sites = 2
+            context_length = 200
+        else:  # Aggressive compression
+            max_sites = 1
+            context_length = 100
+        
         compressed_sites = []
         selected_files = set()
         
         for file, sites in sites_by_file.items():
-            if len(compressed_sites) >= 2:
+            if len(compressed_sites) >= max_sites:
                 break
             if file not in selected_files:
                 # Take first site from this file
@@ -160,7 +200,7 @@ class ContextCompressor:
                 compressed_sites.append({
                     'file': site.get('file', 'unknown'),
                     'line': site.get('line', 0),
-                    'context_preview': site.get('context', '')[:200]  # Slightly more context
+                    'context_preview': site.get('context', '')[:context_length]
                 })
                 selected_files.add(file)
         
@@ -168,12 +208,20 @@ class ContextCompressor:
     
     def _compress_compilation_info(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Compress compilation information"""
-        # Extract key compilation flags
+        # Extract key compilation flags based on compression level
         flags = context.get('compilation_flags', [])
+        
+        if self.compression_level == 0:  # Minimal compression
+            max_flags = 5
+        elif self.compression_level == 1:  # Balanced compression (default)
+            max_flags = 3
+        else:  # Aggressive compression
+            max_flags = 2
+        
         key_flags = [
             flag for flag in flags 
             if any(flag.startswith(prefix) for prefix in ['-I', '-D', '-std=', '-O'])
-        ][:3]  # Top 3 relevant flags
+        ][:max_flags]  # Top relevant flags
         
         return {
             'key_flags': key_flags,

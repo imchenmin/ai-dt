@@ -292,5 +292,119 @@ def test_compress_function_context_integration():
     assert compressed['target_function']['return_type'] == 'int'
 
 
+def test_compression_disabled():
+    """Test context compression when disabled"""
+    compressor = ContextCompressor(enabled=False)
+    
+    function_info = {
+        'name': 'test_func',
+        'return_type': 'int',
+        'parameters': [{'name': 'x', 'type': 'int'}],
+        'file': '/path/to/file.c',
+        'line': 5,
+        'body': 'int test_func(int x) { return x * 2; }',
+        'language': 'c'
+    }
+    
+    full_context = {
+        'called_functions': [
+            {'name': 'func1', 'declaration': 'void func1();'},
+            {'name': 'func2', 'declaration': 'int func2(int);'}
+        ],
+        'macros_used': ['MACRO1', 'MACRO2'],
+        'macro_definitions': [
+            {'name': 'MACRO1', 'definition': '#define MACRO1 1'},
+            {'name': 'MACRO2', 'definition': '#define MACRO2 2'}
+        ],
+        'data_structures': [
+            {'name': 'Struct1', 'definition': 'struct Struct1 { int a; };'},
+            {'name': 'Struct2', 'definition': 'struct Struct2 { float b; };'}
+        ],
+        'call_sites': [
+            {'file': 'file1.c', 'line': 10, 'context': 'test_func(1);'},
+            {'file': 'file2.c', 'line': 20, 'context': 'test_func(2);'}
+        ],
+        'compilation_flags': ['-I/include', '-DDEBUG', '-O2', '-Wall']
+    }
+    
+    result = compressor.compress_function_context(function_info, full_context)
+    
+    # Should return full uncompressed context when disabled
+    assert len(result['dependencies']['called_functions']) == 2
+    assert len(result['dependencies']['macros']) == 2
+    assert len(result['dependencies']['macro_definitions']) == 2
+    assert len(result['dependencies']['data_structures']) == 2
+    assert len(result['usage_patterns']) == 2
+    assert len(result['compilation_info']['key_flags']) == 4
+
+
+def test_compression_levels():
+    """Test different compression levels"""
+    function_info = {
+        'name': 'test_func',
+        'return_type': 'void',
+        'parameters': [],
+        'file': 'test.c',
+        'line': 1,
+        'body': 'void test_func() {}',
+        'language': 'c'
+    }
+    
+    full_context = {
+        'called_functions': [{'name': f'func{i}', 'declaration': f'void func{i}();'} for i in range(10)],
+        'macros_used': [f'MACRO{i}' for i in range(10)],
+        'macro_definitions': [{'name': f'MACRO{i}', 'definition': f'#define MACRO{i} {i}'} for i in range(10)],
+        'data_structures': [{'name': f'Struct{i}', 'definition': f'struct Struct{i} {{ int value; }};'} for i in range(10)],
+        'call_sites': [{'file': f'file{i}.c', 'line': i, 'context': 'test_func();'} for i in range(10)],
+        'compilation_flags': [f'-DOPTION{i}' for i in range(10)] + ['-I/include', '-std=c11', '-O2']
+    }
+    
+    # Test level 0 (minimal compression)
+    compressor0 = ContextCompressor(compression_level=0)
+    result0 = compressor0.compress_function_context(function_info, full_context)
+    
+    # Test level 1 (balanced compression)
+    compressor1 = ContextCompressor(compression_level=1)
+    result1 = compressor1.compress_function_context(function_info, full_context)
+    
+    # Test level 2 (aggressive compression)
+    compressor2 = ContextCompressor(compression_level=2)
+    result2 = compressor2.compress_function_context(function_info, full_context)
+    
+    # Level 0 should have more content than level 1
+    assert len(result0['dependencies']['called_functions']) >= len(result1['dependencies']['called_functions'])
+    assert len(result0['dependencies']['data_structures']) >= len(result1['dependencies']['data_structures'])
+    assert len(result0['dependencies']['macros']) >= len(result1['dependencies']['macros'])
+    
+    # Level 1 should have more content than level 2
+    assert len(result1['dependencies']['called_functions']) >= len(result2['dependencies']['called_functions'])
+    assert len(result1['dependencies']['data_structures']) >= len(result2['dependencies']['data_structures'])
+    assert len(result1['dependencies']['macros']) >= len(result2['dependencies']['macros'])
+    
+    # Usage patterns should also be compressed differently
+    assert len(result0['usage_patterns']) >= len(result1['usage_patterns'])
+    assert len(result1['usage_patterns']) >= len(result2['usage_patterns'])
+
+
+def test_compression_level_clamping():
+    """Test that compression level is clamped to valid range"""
+    # Test level below minimum
+    compressor_low = ContextCompressor(compression_level=-1)
+    assert compressor_low.compression_level == 0
+    
+    # Test level above maximum
+    compressor_high = ContextCompressor(compression_level=5)
+    assert compressor_high.compression_level == 2
+    
+    # Test valid levels
+    compressor0 = ContextCompressor(compression_level=0)
+    compressor1 = ContextCompressor(compression_level=1)
+    compressor2 = ContextCompressor(compression_level=2)
+    
+    assert compressor0.compression_level == 0
+    assert compressor1.compression_level == 1
+    assert compressor2.compression_level == 2
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
