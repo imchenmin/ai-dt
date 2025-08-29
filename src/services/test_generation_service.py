@@ -10,7 +10,8 @@ from datetime import datetime
 
 from src.parser.compilation_db import CompilationDatabaseParser
 from src.analyzer.function_analyzer import FunctionAnalyzer
-from src.generator.test_generator import TestGenerator
+from src.test_generation import TestGenerationService as NewTestGenerationService, TestGenerationConfig
+from src.llm.client import LLMClient
 from src.utils.libclang_config import ensure_libclang_configured
 from src.utils.config_loader import ConfigLoader
 from src.utils.config_manager import config_manager
@@ -26,7 +27,7 @@ class TestGenerationService:
     def __init__(self, 
                  parser: Optional[CompilationDatabaseParser] = None,
                  analyzer: Optional[FunctionAnalyzer] = None,
-                 generator: Optional[TestGenerator] = None):
+                 generator: Optional[NewTestGenerationService] = None):
         """Initialize service with optional dependencies for testing"""
         self.parser = parser
         self.analyzer = analyzer
@@ -178,15 +179,19 @@ class TestGenerationService:
         
         logger.info(f"Generating tests with {llm_provider if not prompt_only else 'mock'} ({model})...")
         
-        # Initialize test generator with error handling configuration
+        # Initialize test generator with new architecture
         error_config = project_config.get('error_handling', {})
-        generator = self.generator or TestGenerator(
-            llm_provider=llm_provider if not prompt_only else "mock",
+        
+        # Create LLM client
+        llm_client = LLMClient(
+            provider=llm_provider if not prompt_only else "mock",
             api_key=api_key,
             model=model,
             max_retries=error_config.get('max_retries', 3),
             retry_delay=error_config.get('retry_delay', 1.0)
         )
+        
+        generator = self.generator or NewTestGenerationService(llm_client)
         
         logger.info(f"Using output directory: {output_dir}")
         logger.info(f"Generating tests for {len(functions_with_context)} functions...")

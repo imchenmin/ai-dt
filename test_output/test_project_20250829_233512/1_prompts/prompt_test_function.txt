@@ -1,0 +1,65 @@
+# 1. 角色与目标 (Role & Goal)
+你是一位精通C和Google Test框架的资深软件测试工程师。
+你的核心任务是为下方指定的函数，生成一个完整、正确且健壮的Google Test单元测试文件。
+
+# 2. 被测函数 (Function Under Test - FUT)
+*   **文件路径:** `test.c:0`
+*   **函数签名:** `int test_function()`
+*   **函数体:**
+    ```c
+return 42;
+    ```
+
+# 3. 上下文与依赖 (Context & Dependencies)
+# 4. 测试生成要求 (Test Generation Requirements)
+1.  **测试框架:** 必须使用 **Google Test** (`gtest`).
+3.  **MockCpp使用指导 (正确语法):
+    *   **语言:** C
+    *   **Mock方法:** 使用 `MOCKER(function_name)` 进行函数Mock
+    *   **正确语法示例 (不要使用Google Mock语法):
+        ```cpp
+        // 正确: MockCpp链式调用
+        MOCKER(malloc)
+            .stubs()
+            .with(eq(sizeof(LinkedList)))
+            .will(returnValue(&fake_list));
+        
+        // 正确: 带调用次数验证
+        MOCKER(create_node)
+            .expects(once())
+            .with(eq(42))
+            .will(returnValue(&mock_node));
+        
+        // 错误: 不要使用Google Mock语法
+        // mock().expectOneCall("malloc").withParameter("size", size).andReturnValue(ptr);
+        ```
+    *   **核心方法:
+        - `.stubs()` - 不校验调用次数
+        - `.expects(times)` - 校验调用次数 (`once()/never()/exactly(n)/atLeast(n)/atMost(n)`)
+        - `.with(constraints)` - 参数约束 (`eq(v)/neq(v)/any()/spy(var)/outBound(var)/outBoundP(ptr,size)`)
+        - `.will(behavior)` - 函数行为 (`returnValue(v)/returnObjectList(v1,v2)/repeat(v,t)/ignoreReturnValue()/throws(e)`)
+    *   **验证:** 在teardown中使用 `GlobalMockObject::verify()`
+    *   **最佳实践:**
+        - 使用`MOCKER(function)`MockC函数和静态成员函数
+        - 使用`MockObject<Class>obj;MOCK_METHOD(obj,method)`Mock类成员函数
+        - 有返回值函数必须使用`.will(...)`指定返回值
+        - 避免Mock标准库函数和系统调用
+        - 优先Mock自定义辅助函数和工具函数
+        - 使用`.id()`和`.before()/.after()`进行调用顺序验证
+        - 使用`.with()`进行参数验证和输出参数设置
+4.  **核心测试场景:
+    *   **正常流程:** 测试函数在典型、有效输入下的行为。
+    *   **边界条件:** 测试极限值、空值或特殊值（如0, -1）作为输入。
+    *   **异常/错误处理:** 如果适用，测试函数在接收到无效输入或依赖项失败时的错误处理逻辑。
+5.  **断言要求:
+    *   使用 Google Test 提供的断言宏（如 `EXPECT_EQ`, `ASSERT_TRUE`）来验证结果。
+    *   如果使用了 Mock，请使用 `EXPECT_CALL` 来验证与依赖项的交互。
+
+# 5. 指令与输出格式 (Instructions & Output Format)
+1.  **思维链 (Chain of Thought):** 在编写代码之前，请先在心中构思或以注释形式列出你计划实现的测试用例大纲。
+2.  **输出单一完整文件:** 生成一个独立的、完整的 C++ 测试文件 (`.cpp`)。
+    *   不要包含 `main` 函数。
+    *   确保包含所有必要的头文件 (`gtest/gtest.h`, `MockCpp/MockCpp.h`, 以及被测函数和其依赖的头文件)。
+
+请现在开始生成你的测试代码:
+```c

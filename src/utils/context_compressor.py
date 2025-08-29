@@ -62,7 +62,7 @@ class ContextCompressor:
                 for p in function_info['parameters']
             ],
             'body': function_info['body'],  # Keep full function body
-            'location': f"{function_info['file']}:{function_info['line']}",
+            'location': f"{function_info['file']}:{function_info.get('line', 0)}",
             'language': function_info.get('language', 'c'),
             'is_static': function_info.get('is_static', False),
             'access_specifier': function_info.get('access_specifier', 'public')

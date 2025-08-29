@@ -179,3 +179,10 @@ profiles:
     test_cases_per_function: null  # Use function-specific settings
     max_workers: 5  # Higher concurrency for custom runs
     timeout: 3600  # 60 minutes
+    
+  dify:
+    description: "Dify API profile with extended timeouts"
+    max_functions: 5  # Limit for Dify testing
+    test_cases_per_function: 5
+    max_workers: 1  # Sequential for Dify stability
+    timeout: 7200  # 2 hours for Dify API calls

@@ -266,9 +266,9 @@ class TestGenerator:
             self.aggregator.aggregate(target_filepath, result['test_code'])
             logger.info(f"Aggregated test for {function_info['name']} into {target_filepath}")
 
-            # Save prompt and raw response, but not the individual test file
+            # Save prompt, raw response, and pure test code
             file_info = organizer.organize_test_output(
-                test_code="", # Pass empty string to avoid creating individual test file
+                test_code=result['test_code'], # Pass actual test code to create pure test file
                 function_name=function_info['name'],
                 prompt=prompt,
                 raw_response=result['test_code']
