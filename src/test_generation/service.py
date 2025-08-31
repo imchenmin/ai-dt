@@ -12,7 +12,7 @@ from .strategies import ExecutionStrategyFactory
 from src.llm.client import LLMClient
 from src.llm.models import LLMConfig
 from src.llm.factory import LLMProviderFactory
-from src.utils.config_loader import ConfigLoader
+from src.utils.config_manager import ConfigManager
 from src.utils.logging_utils import get_logger
 from src.parser.compilation_db import CompilationDatabaseParser
 from src.analyzer.function_analyzer import FunctionAnalyzer
@@ -287,10 +287,11 @@ class TestGenerationService:
             return LLMClient.create_mock_client(model)
         
         # Get API key
-        api_key = ConfigLoader.get_api_key(llm_provider)
+        config_manager = ConfigManager()
+        api_key = config_manager.get_api_key_for_provider(llm_provider)
         if not api_key:
             logger.error(f"{llm_provider.upper()} API key not found.")
-            llm_config = ConfigLoader.get_llm_config(llm_provider)
+            llm_config = config_manager.get_llm_provider_config(llm_provider)
             logger.info(f"Please set {llm_config['api_key_env']} environment variable.")
             # Return mock client for graceful fallback
             return LLMClient.create_mock_client(model)
@@ -316,9 +317,10 @@ class TestGenerationService:
         # Get error handling configuration
         error_config = project_config.get('error_handling', {})
         
+        config_manager = ConfigManager()
         return LLMConfig(
             provider_name=llm_provider,
-            api_key=ConfigLoader.get_api_key(llm_provider),
+            api_key=config_manager.get_api_key_for_provider(llm_provider),
             model=model,
             max_retries=error_config.get('max_retries', 3),
             retry_delay=error_config.get('retry_delay', 1.0),

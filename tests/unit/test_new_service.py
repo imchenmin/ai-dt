@@ -186,7 +186,11 @@ class TestNewTestGenerationService:
         
         project_config = self.create_sample_project_config()
         
-        with patch('src.test_generation.service.ConfigLoader.get_api_key', return_value='test_key'):
+        with patch('src.test_generation.service.ConfigManager') as mock_config_manager_class:
+            mock_config_manager = Mock()
+            mock_config_manager.get_api_key_for_provider.return_value = 'test_key'
+            mock_config_manager_class.return_value = mock_config_manager
+            
             llm_config = service.create_llm_config_from_dict(project_config)
         
         assert isinstance(llm_config, LLMConfig)
@@ -196,10 +200,12 @@ class TestNewTestGenerationService:
         assert llm_config.max_retries == 3
         assert llm_config.retry_delay == 1.0
     
-    @patch('src.test_generation.service.ConfigLoader.get_api_key')
-    def test_create_llm_client_with_api_key(self, mock_get_api_key):
+    @patch('src.test_generation.service.ConfigManager')
+    def test_create_llm_client_with_api_key(self, mock_config_manager_class):
         """Test LLM client creation with API key"""
-        mock_get_api_key.return_value = 'test_api_key'
+        mock_config_manager = Mock()
+        mock_config_manager.get_api_key_for_provider.return_value = 'test_api_key'
+        mock_config_manager_class.return_value = mock_config_manager
         
         service = TestGenerationService()
         project_config = self.create_sample_project_config()
@@ -213,12 +219,13 @@ class TestNewTestGenerationService:
             assert client == mock_client
             mock_create.assert_called_once()
     
-    @patch('src.test_generation.service.ConfigLoader.get_api_key')
-    @patch('src.test_generation.service.ConfigLoader.get_llm_config')
-    def test_create_llm_client_no_api_key(self, mock_get_llm_config, mock_get_api_key):
+    @patch('src.test_generation.service.ConfigManager')
+    def test_create_llm_client_no_api_key(self, mock_config_manager_class):
         """Test LLM client creation without API key falls back to mock"""
-        mock_get_api_key.return_value = None
-        mock_get_llm_config.return_value = {'api_key_env': 'DEEPSEEK_API_KEY'}
+        mock_config_manager = Mock()
+        mock_config_manager.get_api_key_for_provider.return_value = None
+        mock_config_manager.get_llm_provider_config.return_value = {'api_key_env': 'DEEPSEEK_API_KEY'}
+        mock_config_manager_class.return_value = mock_config_manager
         
         service = TestGenerationService()
         project_config = self.create_sample_project_config()
@@ -258,7 +265,11 @@ class TestNewTestGenerationService:
             'error_handling': {'max_retries': 2, 'retry_delay': 0.5}
         }
         
-        with patch('src.test_generation.service.ConfigLoader.get_api_key', return_value='test_key'):
+        with patch('src.test_generation.service.ConfigManager') as mock_config_manager_class:
+            mock_config_manager = Mock()
+            mock_config_manager.get_api_key_for_provider.return_value = 'test_key'
+            mock_config_manager_class.return_value = mock_config_manager
+            
             llm_config = service._create_llm_config(openai_config)
         
         assert llm_config.model == 'gpt-3.5-turbo'
@@ -271,7 +282,11 @@ class TestNewTestGenerationService:
             'error_handling': {}
         }
         
-        with patch('src.test_generation.service.ConfigLoader.get_api_key', return_value='test_key'):
+        with patch('src.test_generation.service.ConfigManager') as mock_config_manager_class:
+            mock_config_manager = Mock()
+            mock_config_manager.get_api_key_for_provider.return_value = 'test_key'
+            mock_config_manager_class.return_value = mock_config_manager
+            
             llm_config = service._create_llm_config(dify_config)
         
         assert llm_config.model == 'dify_model'

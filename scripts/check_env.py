@@ -4,20 +4,29 @@ Check current environment configuration for LLM providers
 """
 
 import os
-from src.utils.config_loader import ConfigLoader
+import sys
+from pathlib import Path
+
+# Add src to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from src.utils.config_manager import ConfigManager
 
 def check_environment():
     """Check current environment setup"""
     print("Environment Configuration Check")
     print("=" * 40)
     
+    # Initialize config manager
+    config_manager = ConfigManager()
+    
     # Check API keys
     providers = ['openai', 'deepseek', 'anthropic']
     
     for provider in providers:
-        api_key = ConfigLoader.get_api_key(provider)
+        api_key = config_manager.get_api_key_for_provider(provider)
         status = "[SET]" if api_key else "[NOT SET]"
-        config = ConfigLoader.get_llm_config(provider)
+        config = config_manager.get_llm_provider_config(provider)
         
         print(f"\n{provider.upper()}:")
         print(f"  API Key: {status}")
