@@ -14,6 +14,9 @@ from src.llm.models import LLMConfig
 from src.llm.factory import LLMProviderFactory
 from src.utils.config_loader import ConfigLoader
 from src.utils.logging_utils import get_logger
+from src.parser.compilation_db import CompilationDatabaseParser
+from src.analyzer.function_analyzer import FunctionAnalyzer
+from src.utils.libclang_config import ensure_libclang_configured
 
 logger = get_logger(__name__)
 
@@ -101,6 +104,141 @@ class TestGenerationService:
         
         # Generate tests
         return self.orchestrator.generate_tests(functions_with_context, config)
+    
+    def analyze_project_functions(self, project_config: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Analyze functions in the specified project"""
+        logger.info(f"Analyzing project: {project_config.get('description', 'Unknown')}")
+        
+        # Configure libclang
+        ensure_libclang_configured()
+        
+        project_root = project_config['path']
+        comp_db_path = project_config['comp_db']
+        
+        # Get include/exclude patterns from config
+        include_patterns = project_config.get('include_patterns')
+        exclude_patterns = project_config.get('exclude_patterns')
+        
+        # Parse compilation database with optional filtering
+        logger.info("Parsing compilation database...")
+        parser = CompilationDatabaseParser(comp_db_path)
+        compilation_units = parser.parse(include_patterns=include_patterns, exclude_patterns=exclude_patterns)
+        logger.info(f"Found {len(compilation_units)} compilation units")
+        
+        if include_patterns:
+            logger.info(f"Including patterns: {include_patterns}")
+        if exclude_patterns:
+            logger.info(f"Excluding patterns: {exclude_patterns}")
+        
+        # Analyze functions
+        logger.info("Analyzing functions...")
+        analyzer = FunctionAnalyzer(project_root)
+        
+        functions_with_context = []
+        filter_config = project_config.get('filter', {})
+        
+        for unit in compilation_units:
+            file_path = unit['file']
+            logger.info(f"Analyzing {file_path}")
+            
+            functions = analyzer.analyze_file(file_path, unit['arguments'])
+            
+            for func in functions:
+                if self._should_include_function(func, filter_config, project_config):
+                    # Get complete context
+                    context = analyzer._analyze_function_context(
+                        func, unit['arguments'], compilation_units
+                    )
+                    
+                    functions_with_context.append({
+                        'function': func,
+                        'context': context
+                    })
+                    
+                    logger.info(f"Found testable function: {func['name']}: {func['return_type']} function with {len(func['parameters'])} parameters")
+        
+        return functions_with_context
+    
+    def generate_tests_with_config(self, functions_with_context: List[Dict[str, Any]], 
+                                  project_config: Dict[str, Any],
+                                  prompt_only: bool = False) -> List[Dict[str, Any]]:
+        """Generate tests using configured LLM provider (backward compatible)"""
+        # Update project config for prompt-only mode
+        if prompt_only:
+            project_config = project_config.copy()
+            project_config['prompt_only'] = True
+        
+        # Use the standard generate_tests method with max_workers from config
+        max_workers = project_config.get('max_workers', 3)
+        return self.generate_tests(functions_with_context, project_config, max_workers)
+    
+    def print_results(self, results: List[Dict[str, Any]], project_config: Dict[str, Any]):
+        """Print generation results"""
+        successful = [r for r in results if r['success']]
+        failed = [r for r in results if not r['success']]
+        
+        logger.info(f"Generation Results:")
+        logger.info(f"  Successful: {len(successful)}")
+        logger.info(f"  Failed: {len(failed)}")
+        
+        if successful:
+            logger.info("Successful Tests:")
+            for result in successful:
+                logger.info(f"  • {result['function_name']}")
+                logger.info(f"    Length: {result.get('test_length', 0)} chars")
+                logger.info(f"    Output: {result.get('output_path', 'unknown')}")
+        
+        if failed:
+            logger.info("Failed Tests:")
+            for result in failed:
+                logger.info(f"  • {result['function_name']}: {result.get('error', 'Unknown error')}")
+    
+    def _should_include_function(self, func: Dict[str, Any], filter_config: Dict[str, Any], 
+                               project_config: Dict[str, Any]) -> bool:
+        """Determine if a function should be included based on filtering rules"""
+        function_name = func.get('name', '')
+        file_path = func.get('file', '')
+        project_path = project_config.get('path', '')
+        function_body = func.get('body', '')
+        
+        # Only include functions defined within the project directory
+        if project_path:
+            abs_project_path = str(Path(project_path).absolute())
+            abs_file_path = str(Path(file_path).absolute())
+            if not abs_file_path.startswith(abs_project_path):
+                return False
+        
+        # Skip compiler builtins and internal functions
+        if filter_config.get('skip_compiler_builtins', True):
+            if function_name.startswith('__') or function_name.startswith('_'):
+                return False
+        
+        # Skip operators and special functions
+        if filter_config.get('skip_operators', True):
+            if function_name.startswith('operator') or function_name in ['main']:
+                return False
+        
+        # Skip inline functions
+        if filter_config.get('skip_inline', True):
+            if function_body and 'inline' in function_body:
+                return False
+        
+        # Skip functions from third-party directories
+        if filter_config.get('skip_third_party', True):
+            if '/third_party/' in file_path or '/vendor/' in file_path:
+                return False
+        
+        # Apply custom include/exclude patterns
+        include_patterns = filter_config.get('custom_include_patterns', [])
+        exclude_patterns = filter_config.get('custom_exclude_patterns', [])
+        
+        if include_patterns and not any(pattern in function_name for pattern in include_patterns):
+            return False
+        
+        if any(pattern in function_name for pattern in exclude_patterns):
+            return False
+        
+        return True
     
     def create_config_from_dict(self, project_config: Dict[str, Any], 
                                max_workers: int = 3) -> TestGenerationConfig:

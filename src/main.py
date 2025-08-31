@@ -9,7 +9,7 @@ import logging
 import sys
 from typing import Dict, Any, List, Optional
 
-from src.services.test_generation_service import TestGenerationService
+from src.test_generation.service import TestGenerationService
 from src.utils.config_manager import config_manager
 from src.utils.logging_utils import get_logger
 
