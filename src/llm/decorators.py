@@ -8,7 +8,7 @@ from typing import Optional
 from .providers import LLMProvider
 from .models import GenerationRequest, GenerationResponse
 from src.utils.logging_utils import get_logger
-from src.utils.error_handling import ErrorHandler, LLMError
+from src.utils.error_handler import ErrorHandler, LLMError
 
 logger = get_logger(__name__)
 
@@ -23,7 +23,7 @@ class RetryDecorator(LLMProvider):
         self.retry_delay = retry_delay
         self.error_handler = ErrorHandler(
             max_retries=max_retries,
-            initial_delay=retry_delay
+            retry_delay=retry_delay
         )
     
     @property

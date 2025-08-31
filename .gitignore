@@ -66,6 +66,8 @@ experiment/generated_tests/*/
 
 # Jupyter notebooks
 .ipynb_checkpoints/
+.history/
+.history/docs/work_logs/20250831_qodo对整体项目进行判断_20250831095149.md
 .history/docs/work_logs/20250831_qodo对整体项目进行判断_20250831095155.md
 .history/docs/work_logs/20250831_qodo对整体项目进行判断_20250831095157.md
 .history/tests/integration/test_end_to_end_pipeline_20250831100643.py
