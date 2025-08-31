@@ -37,14 +37,16 @@ class PromptGenerator:
         prompt = PromptTemplates.generate_test_prompt(
             compressed_context,
             existing_fixture_code=task.existing_fixture_code,
-            suite_name=task.suite_name
+            suite_name=task.suite_name,
+            existing_tests_context=task.existing_tests_context
         )
         
         logger.debug(f"Generated prompt for {task.function_name} ({len(prompt)} characters)")
         return prompt
     
     def prepare_task(self, function_info: Dict[str, Any], context: Dict[str, Any],
-                    unit_test_directory_path: Optional[str] = None) -> GenerationTask:
+                    unit_test_directory_path: Optional[str] = None,
+                    existing_tests_context: Optional[Dict[str, Any]] = None) -> GenerationTask:
         """Prepare a complete generation task from function info and context"""
         # Determine suite name and target file path
         source_file = Path(function_info.get('file', 'unknown'))
@@ -66,7 +68,8 @@ class PromptGenerator:
             context=context,
             target_filepath=target_filepath,
             suite_name=suite_name,
-            existing_fixture_code=existing_fixture_code
+            existing_fixture_code=existing_fixture_code,
+            existing_tests_context=existing_tests_context
         )
 
 

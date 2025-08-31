@@ -1,0 +1,14 @@
+[
+{
+  "directory": "C:/Users/chenmin/ai-dt/test_projects/simple_c_project",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\gcc.exe  @CMakeFiles/utils_lib.dir/includes_C.rsp -std=gnu99 -o CMakeFiles\\utils_lib.dir\\utils.c.obj -c C:\\Users\\chenmin\\ai-dt\\test_projects\\simple_c_project\\utils.c",
+  "file": "C:/Users/chenmin/ai-dt/test_projects/simple_c_project/utils.c",
+  "output": "CMakeFiles/utils_lib.dir/utils.c.obj"
+},
+{
+  "directory": "C:/Users/chenmin/ai-dt/test_projects/simple_c_project",
+  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\gcc.exe  @CMakeFiles/simple_c_project.dir/includes_C.rsp -std=gnu99 -o CMakeFiles\\simple_c_project.dir\\main.c.obj -c C:\\Users\\chenmin\\ai-dt\\test_projects\\simple_c_project\\main.c",
+  "file": "C:/Users/chenmin/ai-dt/test_projects/simple_c_project/main.c",
+  "output": "CMakeFiles/simple_c_project.dir/main.c.obj"
+}
+]

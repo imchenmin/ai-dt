@@ -16,6 +16,7 @@ class GenerationTask:
     target_filepath: str
     suite_name: str
     existing_fixture_code: Optional[str] = None
+    existing_tests_context: Optional[Dict[str, Any]] = None
     
     @property
     def function_name(self) -> str:

@@ -120,16 +120,18 @@ class TestGenerationOrchestrator:
         for func_data in functions_with_context:
             function_info = func_data['function']
             context = func_data['context']
+            existing_tests_context = func_data.get('existing_tests_context')
             
             if not self._should_generate_test(function_info):
                 logger.info(f"Skipping non-testable function: {function_info['name']}")
                 continue
             
-            # Prepare task with fixture finding
+            # Prepare task with fixture finding and existing tests context
             task = self.prompt_generator.prepare_task(
                 function_info, 
                 context, 
-                config.unit_test_directory_path
+                config.unit_test_directory_path,
+                existing_tests_context
             )
             
             # Update target filepath with output directory

@@ -17,6 +17,7 @@ from src.utils.logging_utils import get_logger
 from src.parser.compilation_db import CompilationDatabaseParser
 from src.analyzer.function_analyzer import FunctionAnalyzer
 from src.utils.libclang_config import ensure_libclang_configured
+from src.utils.test_file_matcher import TestFileMatcher
 
 logger = get_logger(__name__)
 
@@ -130,6 +131,13 @@ class TestGenerationService:
         if exclude_patterns:
             logger.info(f"Excluding patterns: {exclude_patterns}")
         
+        # Initialize test file matcher if unit test directory is configured
+        test_matcher = None
+        unit_test_dir = project_config.get('unit_test_directory_path')
+        if unit_test_dir:
+            test_matcher = TestFileMatcher(unit_test_dir, project_root)
+            logger.info(f"Initialized test file matcher with directory: {unit_test_dir}")
+        
         # Analyze functions
         logger.info("Analyzing functions...")
         analyzer = FunctionAnalyzer(project_root)
@@ -150,9 +158,22 @@ class TestGenerationService:
                         func, unit['arguments'], compilation_units
                     )
                     
+                    # Get existing test context if test matcher is available
+                    existing_tests_context = None
+                    if test_matcher:
+                        try:
+                            existing_tests_context = test_matcher.get_test_context_for_function(
+                                func['name'], file_path
+                            )
+                            if existing_tests_context and existing_tests_context.get('existing_test_functions'):
+                                logger.info(f"Found {len(existing_tests_context['existing_test_functions'])} existing tests for function {func['name']}")
+                        except Exception as e:
+                            logger.warning(f"Failed to get test context for function {func['name']}: {e}")
+                    
                     functions_with_context.append({
                         'function': func,
-                        'context': context
+                        'context': context,
+                        'existing_tests_context': existing_tests_context
                     })
                     
                     logger.info(f"Found testable function: {func['name']}: {func['return_type']} function with {len(func['parameters'])} parameters")

@@ -23,7 +23,7 @@ class PromptTemplates:
         return PromptTemplates.SYSTEM_PROMPTS.get(language, PromptTemplates.SYSTEM_PROMPTS['default'])
     
     @staticmethod
-    def generate_test_prompt(compressed_context: Dict[str, Any], existing_fixture_code: str = None, suite_name: str = None) -> str:
+    def generate_test_prompt(compressed_context: Dict[str, Any], existing_fixture_code: str = None, suite_name: str = None, existing_tests_context: Dict[str, Any] = None) -> str:
         """Generate comprehensive test generation prompt with a structured approach."""
         target = compressed_context['target_function']
         deps = compressed_context['dependencies']
@@ -66,7 +66,45 @@ class PromptTemplates:
             prompt_parts.append("*   **相关宏定义:**")
             for macro_def in deps['macro_definitions']:
                 prompt_parts.append(f"    *   `#define {macro_def['name']} {macro_def.get('definition', '')}`")
+        
+        # Add existing tests context if available
+        if existing_tests_context:
+            prompt_parts.extend([
+                "",
+                "# 3.1. 现有测试上下文 (Existing Test Context)",
+                "**重要提示:** 以下是在单元测试目录中发现的与当前待测函数相关的现有测试信息，请在生成新测试时参考这些信息，避免重复测试用例，并保持测试风格的一致性。"
+            ])
+            
+            if existing_tests_context.get('matched_test_files'):
+                prompt_parts.append("*   **匹配的测试文件:**")
+                for test_file in existing_tests_context['matched_test_files']:
+                    prompt_parts.append(f"    - `{test_file}`")
+            
+            if existing_tests_context.get('existing_test_functions'):
+                prompt_parts.append("*   **已存在的测试函数:**")
+                for test_func in existing_tests_context['existing_test_functions']:
+                    target_func = test_func.get('target_function', '未知')
+                    prompt_parts.append(f"    - `{test_func['name']}` (测试目标: {target_func})")
+                    if test_func.get('code'):
+                        # 显示测试代码的前几行作为参考
+                        code_lines = test_func['code'].split('\n')[:5]
+                        code_preview = '\n'.join(code_lines)
+                        if len(test_func['code'].split('\n')) > 5:
+                            code_preview += '\n        // ... (更多代码)'
+                        prompt_parts.extend([
+                            "      ```cpp",
+                            f"      {code_preview}",
+                            "      ```"
+                        ])
+            
+            if existing_tests_context.get('test_coverage_summary'):
+                prompt_parts.extend([
+                    "*   **测试覆盖总结:**",
+                    f"    {existing_tests_context['test_coverage_summary']}"
+                ])
+        
         prompt_parts.extend([
+            "",
             "# 4. 测试生成要求 (Test Generation Requirements)",
             "1.  **测试框架:** 必须使用 **Google Test** (`gtest`).",
         ])

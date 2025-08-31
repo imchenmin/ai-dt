@@ -50,6 +50,7 @@ class ConfigManager:
         defaults.setdefault('max_tokens', 2500)
         defaults.setdefault('temperature', 0.3)
         defaults.setdefault('output_dir', './experiment/generated_tests')
+        defaults.setdefault('unit_test_directory_path', None)
         
         # Set default error handling
         defaults.setdefault('error_handling', {

@@ -61,19 +61,22 @@ class ClangAnalyzer:
         seen_functions = set()
         
         def _extract_recursive(cursor):
-            if cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL:
-                if cursor.is_definition():
-                    function_info = self._get_function_info(cursor, file_path)
-                    if function_info:
-                        # Add to the definition map
-                        function_definitions[function_info['name']] = cursor
+            try:
+                if cursor.kind == clang.cindex.CursorKind.FUNCTION_DECL:
+                    if cursor.is_definition():
+                        function_info = self._get_function_info(cursor, file_path)
+                        if function_info:
+                            # Add to the definition map
+                            function_definitions[function_info['name']] = cursor
 
-                        # Use function name and file location as unique identifier
-                        func_id = f"{function_info['name']}:{function_info['file']}"
-                        if func_id not in seen_functions:
-                            seen_functions.add(func_id)
-                            functions.append(function_info)
-            
+                            # Use function name and file location as unique identifier
+                            func_id = f"{function_info['name']}:{function_info['file']}"
+                            if func_id not in seen_functions:
+                                seen_functions.add(func_id)
+                                functions.append(function_info)
+            except ValueError as e:
+                logger.warning(f"Skipping node in {file_path} due to error: {e}")
+
             # Recursively process child nodes
             for child in cursor.get_children():
                 _extract_recursive(child)

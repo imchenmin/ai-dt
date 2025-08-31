@@ -8,6 +8,7 @@ defaults:
   max_tokens: 2500
   temperature: 0.3
   output_dir: "./experiment/generated_tests"
+  unit_test_directory_path: null  # Optional: path to existing unit test directory (relative to project path)
   
   # Error handling configuration
   error_handling:
@@ -38,6 +39,13 @@ projects:
     path: "test_projects/c"
     comp_db: "test_projects/c/compile_commands.json"
     description: "Simple C math utilities project"
+
+  simple_c_project:
+    path: "test_projects/simple_c_project"
+    comp_db: "test_projects/simple_c_project/compile_commands.json"
+    description: "Simple C project with a public and a static function"
+    unit_test_directory_path: "tests"
+    
 
   # Complex C++ project
   complex_example:

@@ -1,0 +1,2 @@
+C:\ProgramData\mingw64\mingw64\bin\ar.exe qc libutils_lib.a CMakeFiles/utils_lib.dir/utils.c.obj
+C:\ProgramData\mingw64\mingw64\bin\ranlib.exe libutils_lib.a
