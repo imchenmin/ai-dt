@@ -8,6 +8,7 @@ protected:
     }
 
     void TearDown() override {
+        GlobalMockObject::verify();
     }
 };
 

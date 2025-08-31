@@ -85,17 +85,7 @@ class PromptTemplates:
                 for test_func in existing_tests_context['existing_test_functions']:
                     target_func = test_func.get('target_function', '未知')
                     prompt_parts.append(f"    - `{test_func['name']}` (测试目标: {target_func})")
-                    if test_func.get('code'):
-                        # 显示测试代码的前几行作为参考
-                        code_lines = test_func['code'].split('\n')[:5]
-                        code_preview = '\n'.join(code_lines)
-                        if len(test_func['code'].split('\n')) > 5:
-                            code_preview += '\n        // ... (更多代码)'
-                        prompt_parts.extend([
-                            "      ```cpp",
-                            f"      {code_preview}",
-                            "      ```"
-                        ])
+                    # 只显示TEST_F和函数名，不显示详细代码
             
             if existing_tests_context.get('test_coverage_summary'):
                 prompt_parts.extend([
@@ -192,20 +182,118 @@ class PromptTemplates:
             "    *   **局部变量优先:** 每个测试用例应该尽可能使用局部变量，避免依赖类成员",
             "    *   **独立测试数据:** 每个测试用例应该有自己独立的测试数据，避免测试间的数据冲突",
             "    *   **仅在必要时共享:** 只有当多个测试用例确实需要相同的复杂初始化时，才考虑使用SetUp()和成员变量",
-            "4.  **推荐的测试类结构:**",
-            "    ```cpp",
-            f"    class {filename_without_ext}_test : public ::testing::Test {{",
-            "    protected:",
-            "        void SetUp() override {",
-            "            // 仅在确实需要时添加共同的初始化代码",
-            "            // 大多数情况下可以为空",
-            "        }",
-            "        void TearDown() override {",
-            "            GlobalMockObject::verify();",
-            "        }",
-            "        // 避免添加成员变量，除非多个测试确实需要相同的复杂对象",
-            "    };",
-            "    ```",
+            "4.  **推荐的测试类结构:**"
+        ])
+        
+        # Check if there are existing test classes to use their definition
+        if existing_tests_context and existing_tests_context.get('existing_test_classes'):
+            # Use existing test class definition
+            existing_class = existing_tests_context['existing_test_classes'][0]  # Use first class as template
+            prompt_parts.extend([
+                "    ```cpp",
+                f"    {existing_class['definition']}",
+                "    ```",
+                "    **注意:** 以上是基于现有测试类的结构，请保持一致的测试类设计。"
+            ])
+        elif existing_tests_context and existing_tests_context.get('existing_test_functions'):
+            # Try to extract test class name from existing test functions
+            existing_test_functions = existing_tests_context['existing_test_functions']
+            if existing_test_functions:
+                # Extract class name from TEST_F format: TEST_F(ClassName, TestName)
+                first_test = existing_test_functions[0]['name']
+                if 'TEST_F(' in first_test:
+                    # Extract class name from TEST_F(ClassName, TestName)
+                    start = first_test.find('TEST_F(') + 7
+                    end = first_test.find(',', start)
+                    if end > start:
+                        existing_class_name = first_test[start:end].strip()
+                        # Use existing test class structure with the extracted class name
+                        prompt_parts.extend([
+                            "    ```cpp",
+                            f"    class {existing_class_name} : public ::testing::Test {{",
+                            "    protected:",
+                            "        void SetUp() override {",
+                            "            // 基于现有测试类的结构",
+                            "            // 请保持与现有测试的一致性",
+                            "        }",
+                            "        void TearDown() override {",
+                            "            GlobalMockObject::verify();",
+                            "        }",
+                            "        // 根据现有测试需要添加成员变量",
+                            "    };",
+                            "    ```",
+                            "    **注意:** 以上是基于现有测试类的结构，请保持一致的测试类设计。"
+                        ])
+                    else:
+                        # Fallback to default template
+                        prompt_parts.extend([
+                            "    ```cpp",
+                            f"    class {filename_without_ext}_test : public ::testing::Test {{",
+                            "    protected:",
+                            "        void SetUp() override {",
+                            "            // 仅在确实需要时添加共同的初始化代码",
+                            "            // 大多数情况下可以为空",
+                            "        }",
+                            "        void TearDown() override {",
+                            "            GlobalMockObject::verify();",
+                            "        }",
+                            "        // 避免添加成员变量，除非多个测试确实需要相同的复杂对象",
+                            "    };",
+                            "    ```"
+                        ])
+                else:
+                    # No TEST_F format found, use default template
+                    prompt_parts.extend([
+                        "    ```cpp",
+                        f"    class {filename_without_ext}_test : public ::testing::Test {{",
+                        "    protected:",
+                        "        void SetUp() override {",
+                        "            // 仅在确实需要时添加共同的初始化代码",
+                        "            // 大多数情况下可以为空",
+                        "        }",
+                        "        void TearDown() override {",
+                        "            GlobalMockObject::verify();",
+                        "        }",
+                        "        // 避免添加成员变量，除非多个测试确实需要相同的复杂对象",
+                        "    };",
+                        "    ```"
+                    ])
+            else:
+                # No existing test functions, use default template
+                prompt_parts.extend([
+                    "    ```cpp",
+                    f"    class {filename_without_ext}_test : public ::testing::Test {{",
+                    "    protected:",
+                    "        void SetUp() override {",
+                    "            // 仅在确实需要时添加共同的初始化代码",
+                    "            // 大多数情况下可以为空",
+                    "        }",
+                    "        void TearDown() override {",
+                    "            GlobalMockObject::verify();",
+                    "        }",
+                    "        // 避免添加成员变量，除非多个测试确实需要相同的复杂对象",
+                    "    };",
+                    "    ```"
+                ])
+        else:
+            # No existing tests context, use default template
+            prompt_parts.extend([
+                "    ```cpp",
+                f"    class {filename_without_ext}_test : public ::testing::Test {{",
+                "    protected:",
+                "        void SetUp() override {",
+                "            // 仅在确实需要时添加共同的初始化代码",
+                "            // 大多数情况下可以为空",
+                "        }",
+                "        void TearDown() override {",
+                "            GlobalMockObject::verify();",
+                "        }",
+                "        // 避免添加成员变量，除非多个测试确实需要相同的复杂对象",
+                "    };",
+                "    ```"
+            ])
+        
+        prompt_parts.extend([
             "",
             "# 6. 指令与输出格式 (Instructions & Output Format)",
             "1.  **思维链 (Chain of Thought):** 在编写代码之前，请先在心中构思或以注释形式列出你计划实现的测试用例大纲。",

@@ -431,6 +431,46 @@ class TestFileMatcher:
             'test_count': len(existing_tests)
         }
     
+    @with_error_handling(context="提取测试类定义", critical=False)
+    def extract_test_classes(self, test_file_path: str) -> List[Dict[str, str]]:
+        """
+        从测试文件中提取测试类定义
+        
+        Args:
+            test_file_path: 测试文件路径
+            
+        Returns:
+            List[Dict[str, str]]: 测试类信息列表，每个字典包含:
+                - name: 测试类名
+                - definition: 完整的类定义代码
+        """
+        try:
+            with open(test_file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except Exception as e:
+            logger.error(f"读取测试文件失败 {test_file_path}: {e}")
+            return []
+        
+        test_classes = []
+        
+        # 匹配Google Test fixture类的正则表达式
+        # 匹配格式: class ClassName : public ::testing::Test {
+        class_pattern = r'class\s+(\w+)\s*:\s*public\s+::testing::Test\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\};'
+        
+        matches = re.finditer(class_pattern, content, re.MULTILINE | re.DOTALL)
+        for match in matches:
+            class_name = match.group(1).strip()
+            class_body = match.group(2).strip()
+            full_definition = match.group(0)
+            
+            test_classes.append({
+                'name': class_name,
+                'definition': full_definition
+            })
+            
+        logger.info(f"从 {test_file_path} 中提取到 {len(test_classes)} 个测试类")
+        return test_classes
+    
     def get_test_context_for_function(self, function_name: str, source_file: str) -> Dict[str, Any]:
         """
         Get existing test context for a function
@@ -444,9 +484,14 @@ class TestFileMatcher:
         """
         test_file = self.find_matching_test_file(source_file)
         existing_tests = self.get_existing_tests_for_function(source_file, function_name)
+        existing_classes = []
+        
+        if test_file:
+            existing_classes = self.extract_test_classes(test_file)
         
         return {
             'matched_test_files': [test_file] if test_file else [],
             'existing_test_functions': existing_tests,
+            'existing_test_classes': existing_classes,
             'test_coverage_summary': f"Found {len(existing_tests)} existing tests in {1 if test_file else 0} test files"
         }
