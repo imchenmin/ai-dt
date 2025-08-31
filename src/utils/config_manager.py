@@ -182,6 +182,85 @@ class ConfigManager:
         except ValueError:
             return None
 
+    def get_llm_provider_config(self, provider: str) -> Dict[str, Any]:
+        """Get LLM provider configuration (standalone method for backward compatibility)"""
+        # Hardcoded LLM provider configurations for backward compatibility
+        configs = {
+            "openai": {
+                "api_key_env": "OPENAI_API_KEY",
+                "default_model": "gpt-3.5-turbo",
+                "base_url": "https://api.openai.com/v1",
+                "models": ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"]
+            },
+            "deepseek": {
+                "api_key_env": "DEEPSEEK_API_KEY",
+                "default_model": "deepseek-chat",
+                "base_url": "https://api.deepseek.com/v1",
+                "models": ["deepseek-chat", "deepseek-coder"]
+            },
+            "anthropic": {
+                "api_key_env": "ANTHROPIC_API_KEY",
+                "default_model": "claude-3-sonnet",
+                "base_url": "https://api.anthropic.com/v1",
+                "models": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"]
+            },
+            "dify": {
+                "api_key_env": "DIFY_API_KEY",
+                "default_model": "dify-model",
+                "base_url": "https://api.dify.ai/v1/chat-messages",
+                "models": ["dify-model"]
+            }
+        }
+        
+        if provider not in configs:
+            raise ValueError(f"Unsupported provider: {provider}")
+        
+        return configs[provider]
+
+    def get_api_key_for_provider(self, provider: str) -> Optional[str]:
+        """Get API key for a specific provider from environment (backward compatible)"""
+        try:
+            config = self.get_llm_provider_config(provider)
+            return os.environ.get(config["api_key_env"])
+        except ValueError:
+            return None
+
+    def is_provider_available_standalone(self, provider: str) -> bool:
+        """Check if a provider is configured and available (standalone method)"""
+        return self.get_api_key_for_provider(provider) is not None
+
+    def get_available_providers_list(self) -> Dict[str, bool]:
+        """Get all available providers and their status (backward compatible)"""
+        providers = ["openai", "deepseek", "anthropic"]
+        return {provider: self.is_provider_available_standalone(provider) for provider in providers}
+
+    def print_provider_status(self):
+        """Print status of all LLM providers"""
+        logger.info("LLM Provider Status:")
+        logger.info("=" * 40)
+        
+        providers = self.get_available_providers_list()
+        
+        for provider, available in providers.items():
+            status = "✅ Available" if available else "❌ Not configured"
+            try:
+                config = self.get_llm_provider_config(provider)
+                
+                logger.info(f"{provider.upper()}:")
+                logger.info(f"  Status: {status}")
+                logger.info(f"  API Key Env: {config['api_key_env']}")
+                logger.info(f"  Default Model: {config['default_model']}")
+                logger.info(f"  Available Models: {', '.join(config['models'])}")
+                logger.info("")
+            except ValueError:
+                logger.info(f"{provider.upper()}: Configuration not found")
+        
+        if not any(providers.values()):
+            logger.info("No LLM providers configured. Set API keys for:")
+            logger.info("  - OPENAI_API_KEY for OpenAI")
+            logger.info("  - DEEPSEEK_API_KEY for DeepSeek") 
+            logger.info("  - ANTHROPIC_API_KEY for Anthropic")
+
 
 # Global config manager instance
 config_manager = ConfigManager()
