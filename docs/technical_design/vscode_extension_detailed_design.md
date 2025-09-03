@@ -61,8 +61,23 @@ interface CppBackend {
   // 函数分析
   analyzeFunction(functionName: string, filePath: string): Promise<FunctionAnalysis>;
   
-  // 依赖分析
+  // 增强的依赖分析（支持穿透配置）
   getDependencies(functionName: string, context: AnalysisContext): Promise<Dependency[]>;
+  analyzeDependenciesWithPenetration(
+    functionName: string, 
+    context: AnalysisContext,
+    config: DependencyAnalysisConfig
+  ): Promise<PenetratedDependency[]>;
+  
+  // 静态方法调用链分析
+  analyzeStaticCallChain(functionName: string, depth: number): Promise<StaticCallChain>;
+  
+  // 结构体成员使用分析
+  analyzeStructMemberUsage(
+    structName: string,
+    functionContext: FunctionAnalysis,
+    callChain: PenetratedDependency[]
+  ): Promise<UsedMemberAnalysis>;
   
   // Mock生成
   generateMockSuggestions(functionSig: string): Promise<MockDefinition[]>;
@@ -71,18 +86,136 @@ interface CppBackend {
   validateTestCode(testCode: string, originalCode: string): Promise<ValidationResult>;
 }
 
-interface FunctionAnalysis {
+// 依赖穿透配置
+interface DependencyAnalysisConfig {
+  enablePenetration: boolean;
+  maxDepth: number;
+  includeStaticMethods: boolean;
+  includePrivateMethods: boolean;
+  penetrationRules: {
+    staticMethodDepth: number;
+    memberFunctionDepth: number;
+    globalFunctionDepth: number;
+  };
+}
+
+// 穿透依赖信息
+interface PenetratedDependency extends Dependency {
+  depth: number;
+  callPath: string[];
+  isStaticCall: boolean;
+  penetrationReason: 'static_method' | 'member_access' | 'global_function';
+}
+
+// 静态调用链
+interface StaticCallChain {
+  rootFunction: string;
+  callChain: StaticCall[];
+  maxDepth: number;
+  totalCalls: number;
+}
+
+interface StaticCall {
+  functionName: string;
+  className?: string;
+  depth: number;
+  parameters: Parameter[];
+  returnType: string;
+}
+
+// 统一的函数/方法分析接口（支持多语言）
+interface UnifiedFunctionAnalysis {
+  // 基础信息
   name: string;
   signature: string;
   returnType: string;
-  parameters: Parameter[];
+  parameters: UnifiedParameter[];
+  
+  // 语言无关的属性
+  visibility: 'public' | 'private' | 'protected' | 'package';
+  modifiers: string[];
+  annotations: Annotation[];
+  
+  // 上下文信息
+  containingScope: ScopeInfo;
+  dependencies: PenetratedDependency[];
+  usageAnalysis: UsedMemberAnalysis;
+  
+  // 测试相关
+  existingTests: ExistingTestAnalysis;
+  frameworkContext: FrameworkContext;
+  
+  // 原有字段保持兼容
+  body: string;
+  location: SourceLocation;
+  documentation?: string;
+}
+
+// 保持向后兼容的原接口
+interface FunctionAnalysis extends UnifiedFunctionAnalysis {
   accessModifier: 'public' | 'private' | 'protected';
   isStatic: boolean;
   isVirtual: boolean;
   isConst: boolean;
-  body: string;
-  location: SourceLocation;
-  documentation?: string;
+}
+
+// 上下文压缩相关接口
+interface ContextCompressor {
+  // 结构体成员使用分析
+  analyzeStructMemberUsage(
+    structName: string,
+    functionContext: FunctionAnalysis,
+    callChain: PenetratedDependency[]
+  ): Promise<UsedMemberAnalysis>;
+  
+  // 作用域裁剪
+  pruneUnusedScope(
+    originalContext: TestGenerationContext,
+    usageAnalysis: UsedMemberAnalysis
+  ): Promise<CompressedContext>;
+  
+  // 智能上下文压缩
+  compressContext(
+    context: TestGenerationContext,
+    compressionLevel: 'minimal' | 'balanced' | 'comprehensive'
+  ): Promise<CompressedContext>;
+}
+
+interface UsedMemberAnalysis {
+  structName: string;
+  usedMembers: Set<string>;
+  unusedMembers: Set<string>;
+  memberAccessPatterns: Map<string, AccessPattern[]>;
+  compressionScore: number;
+}
+
+interface CompressedContext {
+  originalSize: number;
+  compressedSize: number;
+  compressionRatio: number;
+  prunedElements: PrunedElement[];
+  retainedElements: RetainedElement[];
+}
+
+interface AccessPattern {
+  memberName: string;
+  accessType: 'read' | 'write' | 'modify';
+  frequency: number;
+  context: string;
+}
+
+interface PrunedElement {
+  type: 'struct_member' | 'function' | 'variable';
+  name: string;
+  reason: string;
+  originalSize: number;
+}
+
+interface RetainedElement {
+  type: 'struct_member' | 'function' | 'variable';
+  name: string;
+  importance: number;
+  size: number;
 }
 
 interface Parameter {
