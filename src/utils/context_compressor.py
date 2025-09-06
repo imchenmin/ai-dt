@@ -329,11 +329,5 @@ class ContextCompressor:
         # Use delayed import to avoid circular import
         from .prompt_templates import PromptTemplates
         
-        target = compressed_context['target_function']
-        
-        # Use specialized template for memory functions
-        if PromptTemplates.should_use_memory_template(target):
-            return PromptTemplates.generate_memory_function_prompt(compressed_context)
-        
-        # Use general template for other functions
+        # Use general template for all functions
         return PromptTemplates.generate_test_prompt(compressed_context)

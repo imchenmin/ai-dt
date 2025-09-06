@@ -50,7 +50,7 @@ class FunctionAnalyzer:
         if language == 'c':
             # C: Only non-static functions are testable
             return not function_info.get('is_static', False)
-        elif language == 'cpp':
+        elif language == 'c++':
             # C++: Public methods, static methods, and private methods (via symbol hijacking)
             return (
                 function_info.get('access_specifier') == 'public' or

@@ -408,7 +408,7 @@ class TestLanguageEnum:
     def test_language_values(self):
         """Test Language enum values"""
         assert Language.C.value == 'c'
-        assert Language.CPP.value == 'cpp'
+        assert Language.CPP.value == 'c++'
     
     def test_display_names(self):
         """Test Language display names"""
@@ -422,7 +422,7 @@ class TestLanguageEnum:
         
         # Test string values
         assert Language.C.value == 'c'
-        assert Language.CPP.value == 'cpp'
+        assert Language.CPP.value == 'c++'
 
 
 if __name__ == '__main__':

@@ -66,7 +66,7 @@ class LLMClient:
             prompt: The generation prompt
             max_tokens: Maximum tokens to generate
             temperature: Generation temperature
-            language: Programming language (c, cpp)
+            language: Programming language (c, c++)
             
         Returns:
             Dictionary with generation results for backward compatibility

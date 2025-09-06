@@ -1,0 +1,52 @@
+{# C/C++ MockCpp指导部分模板 #}
+{% if dependencies.called_functions and dependencies.called_functions|length > 0 %}
+2.  **Mock要求:** 为以下外部依赖函数生成Mock：
+{% for func in dependencies.called_functions %}
+    *   `{{ func.name }}`: {{ func.signature }}
+{% endfor %}
+
+3.  **MockCpp使用指导 (正确语法):**
+    *   **语言:** {{ target_function.language.display_name }}
+    *   **Mock方法:** 使用 `MOCKER(function_name)` 进行函数Mock
+    *   **正确语法示例 (不要使用Google Mock语法):**
+        ```cpp
+        // 正确: MockCpp链式调用
+        MOCKER(custom_function)
+            .stubs()
+            .with(eq(42))
+            .will(returnValue(100));
+        
+        // 正确: 带调用次数验证
+        MOCKER(create_node)
+            .expects(once())
+            .with(eq(42))
+            .will(returnValue(&mock_node));
+        
+        // 错误: 不要使用Google Mock语法
+        // mock().expectOneCall("malloc").withParameter("size", size).andReturnValue(ptr);
+        ```
+    *   **核心方法:**
+        - `.stubs()` - 不校验调用次数
+        - `.defaults()` - 定义默认行为，优先级最低
+        - `.expects(times)` - 校验调用次数 (`once()/never()/exactly(n)/atLeast(n)/atMost(n)`)
+        - `.with(constraints)` - 参数约束 (`eq(v)/neq(v)/any()/spy(var)/outBound(var)/outBoundP(ptr,size)`)
+        - `.will(behavior)` - 函数行为 (`returnValue(v)/returnObjectList(v1,v2)/repeat(v,t)/ignoreReturnValue()/throws(e)`)
+    *   **验证:** 在teardown中使用 `GlobalMockObject::verify()`
+    *   **重要限制:**
+        - **不能Mock系统函数**: 如 `fabs`, `strcmp`, `malloc`, `free` 等标准库函数
+        - **不能Mock可变参数函数**: 如 `printf`, `scanf` 等
+        - **不能Mock内联函数**: 编译器内联优化的函数
+        - **只能Mock自定义函数**: 优先Mock项目内的辅助函数和工具函数
+    *   **最佳实践:**
+        - 使用`MOCKER(function)`Mock C函数和静态成员函数
+        - 使用`MockObject<Class>obj;MOCK_METHOD(obj,method)`Mock类成员函数
+        - 有返回值函数必须使用`.will(...)`指定返回值
+        - 避免Mock标准库函数和系统调用
+        - 优先Mock自定义辅助函数和工具函数
+        - 使用`.id()`和`.before()/.after()`进行调用顺序验证
+        - 使用`.with()`进行参数验证和输出参数设置
+        - **指针参数**: 使用 `outBoundP(ptr, size)` 而不是 `outBound(var)` 设置指针输出参数
+{% else %}
+2.  **无外部依赖:** 此函数没有外部依赖，无需Mock。
+3.  **专注单元测试:** 重点测试函数的内部逻辑和边界条件。
+{% endif %}

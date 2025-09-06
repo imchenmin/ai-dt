@@ -1,0 +1,50 @@
+# Template Configuration for Jinja2 Template System
+# This file controls template selection and behavior
+
+# Default template set to use when none is specified
+default_template_set: base
+
+# Template sets configuration
+template_sets:
+  base:
+    # Base template used for all languages unless overridden
+    base_template: base/test_generation.j2
+    
+    # Language-specific template overrides
+    language_overrides:
+      c: c/test_generation.j2
+      c++: cpp/test_generation.j2
+      java: java/test_generation.j2
+  
+  # Alternative template set for different testing strategies
+  comprehensive:
+    base_template: base/comprehensive_test_generation.j2
+    language_overrides:
+      c: c/comprehensive_test_generation.j2
+      c++: cpp/comprehensive_test_generation.j2
+
+# Template rendering options
+rendering:
+  # Whether to trim whitespace from template blocks
+  trim_blocks: true
+  
+  # Whether to strip leading whitespace from template blocks
+  lstrip_blocks: true
+  
+  # Whether to keep trailing newlines in templates
+  keep_trailing_newline: true
+
+# Template validation settings
+validation:
+  # Whether to validate template syntax on load
+  validate_syntax: true
+  
+  # Whether to check for required variables
+  check_required_variables: true
+  
+  # List of required variables that must be present in context
+  required_variables:
+    - function_under_test
+    - language
+    - dependencies
+    - existing_tests

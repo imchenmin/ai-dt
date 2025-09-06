@@ -1,0 +1,190 @@
+# 角色与目标
+你是一个专业的C++测试用例生成专家。你的任务是为给定的C++函数生成高质量、全面的单元测试用例。
+
+# 被测函数
+**函数名称**: {{target_function_name}}
+**函数位置**: {{target_location}}
+**函数签名**:
+```cpp
+{{function_signature}}
+```
+
+{% if function_body -%}
+**函数实现**:
+```cpp
+{{function_body}}
+```
+{% endif %}
+
+# 上下文与依赖
+
+## 依赖定义
+{% if dependency_definitions -%}
+以下是被测函数依赖的类、结构体、枚举、模板等：
+```cpp
+{% for dep in dependency_definitions -%}
+{{dep}}
+{% endfor -%}
+```
+{% endif %}
+
+## 宏定义
+{% if macro_definitions -%}
+以下是相关的宏定义：
+```cpp
+{% for macro in macro_definitions -%}
+{{macro}}
+{% endfor -%}
+```
+{% endif %}
+
+## 调用的函数
+{% if called_functions -%}
+被测函数调用了以下函数：
+{% for func in called_functions -%}
+- `{{func.name}}`: {{func.description or '需要Mock的函数'}}
+{% endfor %}
+{% endif %}
+
+## 现有测试上下文
+{% if existing_tests and existing_tests|length > 0 -%}
+以下是项目中已存在的相关测试，请参考其风格和模式：
+```cpp
+{% for test in existing_tests -%}
+{{test}}
+
+{% endfor -%}
+```
+{% endif %}
+
+## 依赖分析
+{% if dependency_analysis -%}
+{{dependency_analysis}}
+{% endif %}
+
+# 测试生成要求
+
+## Google Test框架要求
+- 使用Google Test (gtest)框架进行C++测试
+- 测试类继承自`::testing::Test`
+- 使用`TEST_F`宏定义测试用例
+- 使用适当的断言宏：`EXPECT_EQ`, `EXPECT_NE`, `EXPECT_TRUE`, `EXPECT_FALSE`, `ASSERT_*`等
+- 充分利用C++的面向对象特性和RAII
+
+## Mock指导
+{% if mock_guidance -%}
+{{mock_guidance}}
+{% else -%}
+对于C++函数的Mock：
+- 使用Google Mock (gmock)框架进行Mock
+- 对于虚函数，直接使用MOCK_METHOD宏
+- 对于非虚函数，使用依赖注入或模板技术
+- 利用C++的函数重载和模板特性
+- 使用MockCpp框架进行更复杂的Mock场景
+{% endif %}
+
+## 核心测试场景
+请确保覆盖以下测试场景：
+1. **正常路径测试**: 验证函数在正常输入下的预期行为
+2. **边界值测试**: 测试边界条件和极值情况
+3. **异常处理测试**: 验证异常抛出和处理机制
+4. **空值/nullptr测试**: 测试空指针、空容器等特殊输入
+5. **RAII测试**: 验证资源管理和自动清理
+6. **模板特化测试**: 如果是模板函数，测试不同类型参数
+7. **继承和多态测试**: 测试虚函数调用和继承关系
+
+## 断言要求
+- 每个测试用例必须包含明确的断言
+- 断言应该验证函数的返回值、输出参数、副作用等
+- 使用描述性的断言消息，便于调试
+- 利用C++的类型安全特性进行更精确的断言
+
+# 代码结构与命名规范
+
+## 测试类结构
+{% if test_class_structure -%}
+{{test_class_structure}}
+{% else -%}
+```cpp
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include "{{target_function_name}}.h"  // 包含被测函数的头文件
+
+class {{target_function_name|title}}Test : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // 测试前的初始化
+        // 创建测试对象、设置Mock等
+    }
+    
+    void TearDown() override {
+        // 测试后的清理
+        // RAII通常会自动处理资源清理
+    }
+    
+    // 测试辅助方法和成员变量
+    // 可以使用智能指针管理测试对象
+};
+```
+{% endif %}
+
+## 命名规范
+- 测试类名：`{{target_function_name|title}}Test`
+- 测试方法名：使用描述性名称，如`ShouldReturnExpectedValue_WhenGivenValidInput`
+- 变量名：使用清晰、描述性的名称
+- 遵循C++命名约定（驼峰命名法或下划线分隔）
+
+# C++特殊考虑
+
+## 面向对象特性
+- 测试类的构造函数、析构函数、拷贝构造函数、赋值操作符
+- 验证虚函数的正确调用
+- 测试继承关系和多态行为
+- 验证友元函数的访问权限
+
+## 模板和泛型
+- 对于模板函数，测试不同类型参数
+- 验证模板特化的正确性
+- 测试SFINAE和概念约束
+- 使用类型参数化测试（TYPED_TEST）
+
+## 异常安全
+- 测试异常抛出的正确性
+- 验证异常安全保证（基本保证、强保证、无抛出保证）
+- 使用EXPECT_THROW、EXPECT_NO_THROW等断言
+- 测试RAII的异常安全性
+
+## 现代C++特性
+- 测试智能指针的使用
+- 验证移动语义和完美转发
+- 测试lambda表达式和函数对象
+- 使用auto关键字和类型推导
+- 测试constexpr函数的编译时计算
+
+## STL容器和算法
+- 测试STL容器的正确使用
+- 验证迭代器的有效性
+- 测试算法的正确性和性能
+- 使用范围for循环和算法库
+
+# 指令与输出格式
+
+请基于以上信息生成完整的C++测试代码。输出应该：
+
+1. **包含完整的测试文件**，包括必要的头文件
+2. **实现测试类**，包含适当的SetUp和TearDown方法
+3. **生成多个测试用例**，覆盖不同的测试场景
+4. **使用适当的Mock**（如果需要）
+5. **包含清晰的注释**，解释测试目的和预期结果
+6. **遵循现代C++编码规范**和最佳实践
+
+请确保生成的测试代码：
+- 语法正确，可以直接编译运行
+- 充分利用C++的面向对象和泛型特性
+- 正确处理异常和资源管理
+- 逻辑清晰，易于理解和维护
+- 覆盖面广，能够有效验证函数功能
+- 包含适当的错误处理和边界测试
+- 体现现代C++的最佳实践
+
+开始生成C++测试代码：

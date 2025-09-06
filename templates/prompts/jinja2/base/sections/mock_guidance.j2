@@ -1,0 +1,10 @@
+{# Mock指导部分模板 - 根据语言选择合适的Mock指导 #}
+{% if target_function.language.value in ['c', 'cpp'] %}
+{% include 'base/sections/cpp_mock_guidance.j2' %}
+{% elif target_function.language.value == 'java' %}
+{% include 'base/sections/java_mock_guidance.j2' %}
+{% else %}
+{# 默认情况：无外部依赖 #}
+2.  **无外部依赖:** 此函数没有外部依赖，无需Mock。
+3.  **专注单元测试:** 重点测试函数的内部逻辑和边界条件。
+{% endif %}

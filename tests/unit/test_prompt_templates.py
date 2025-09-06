@@ -66,49 +66,7 @@ def test_prompt_templates_with_compressed_context():
     pass  # Compilation flags are not currently included in prompt
     assert 'Google Test' in prompt
     
-    # Test memory function detection
-    memory_function = {
-        'name': 'free_memory',
-        'return_type': 'void',
-        'parameters': [{'name': 'ptr', 'type': 'void*'}]
-    }
-    
-    assert PromptTemplates.should_use_memory_template(memory_function)
-    
-    # Test non-memory function
-    normal_function = {
-        'name': 'calculate',
-        'return_type': 'int',
-        'parameters': [{'name': 'x', 'type': 'int'}]
-    }
-    
-    assert not PromptTemplates.should_use_memory_template(normal_function)
 
-
-def test_memory_function_prompt():
-    """Test memory function prompt generation"""
-    
-    compressed_context = {
-        'target_function': {
-            'name': 'free_memory',
-            'signature': 'void free_memory(void* ptr)',
-            'return_type': 'void',
-            'parameters': [{'name': 'ptr', 'type': 'void*'}],
-            'body': 'void free_memory(void* ptr) { free(ptr); }',
-            'location': '/path/to/memory.c:5',
-            'language': 'c'
-        },
-        'dependencies': {},
-        'usage_patterns': [],
-        'compilation_info': {'key_flags': [], 'total_flags_count': 0}
-    }
-    
-    prompt = PromptTemplates.generate_memory_function_prompt(compressed_context)
-    
-    assert 'free_memory' in prompt
-    assert '内存函数特别指导' in prompt
-    assert '内存管理' in prompt
-    assert '内存泄漏' in prompt
 
 
 if __name__ == "__main__":

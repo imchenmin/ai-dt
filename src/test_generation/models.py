@@ -123,7 +123,7 @@ class AggregatedResult:
 class Language(Enum):
     """支持的编程语言"""
     C = "c"
-    CPP = "cpp"
+    CPP = "c++"
     
     @property
     def display_name(self) -> str:
@@ -432,20 +432,3 @@ class PromptContext:
     def has_external_dependencies(self) -> bool:
         """检查是否有外部依赖"""
         return self.dependencies.has_external_dependencies
-    
-    def should_use_memory_template(self) -> bool:
-        """判断是否应该使用内存函数模板"""
-        function_name = self.target_function.name.lower()
-        return_type = self.target_function.return_type.lower()
-        
-        # 检查内存相关的函数名
-        memory_keywords = ['free', 'delete', 'alloc', 'malloc', 'new', 'release', 'destroy']
-        if any(keyword in function_name for keyword in memory_keywords):
-            return True
-        
-        # 检查指针返回类型
-        pointer_types = ['*', 'void*']
-        if any(ptype in return_type for ptype in pointer_types):
-            return True
-            
-        return False

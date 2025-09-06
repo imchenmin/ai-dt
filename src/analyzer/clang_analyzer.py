@@ -119,7 +119,7 @@ class ClangAnalyzer:
                 'line': cursor.location.line,
                 'is_static': is_static,
                 'access_specifier': access_specifier,
-                'language': 'cpp' if actual_file.endswith(('.cpp', '.cc', '.cxx')) else 'c',
+                'language': 'c++' if actual_file.endswith(('.cpp', '.cc', '.cxx')) else 'c',
                 'body': function_body
             }
             
