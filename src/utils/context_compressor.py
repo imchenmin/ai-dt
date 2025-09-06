@@ -3,7 +3,7 @@ Context compressor for LLM-friendly test generation with intelligent compression
 """
 
 from typing import Dict, Any, List, Optional
-from .prompt_templates import PromptTemplates
+# Removed direct import to avoid circular import
 from .token_counter import TokenCounter, create_token_counter
 from .dependency_ranker import DependencyRanker, select_top_dependencies, select_top_dependency_names, DependencyType
 
@@ -326,6 +326,9 @@ class ContextCompressor:
     
     def format_for_llm_prompt(self, compressed_context: Dict[str, Any]) -> str:
         """Format compressed context for LLM prompt using templates"""
+        # Use delayed import to avoid circular import
+        from .prompt_templates import PromptTemplates
+        
         target = compressed_context['target_function']
         
         # Use specialized template for memory functions

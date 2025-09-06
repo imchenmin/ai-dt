@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any
 
 from .models import GenerationRequest, GenerationResponse, TokenUsage
 from src.utils.logging_utils import get_logger
-from src.utils.prompt_templates import PromptTemplates
+# from src.utils.prompt_templates import PromptTemplates  # Removed to avoid circular import
 
 logger = get_logger(__name__)
 
@@ -63,6 +63,8 @@ class OpenAIProvider(LLMProvider):
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         """Generate text using OpenAI API"""
         try:
+            # Use delayed import to avoid circular import
+            from src.utils.prompt_templates import PromptTemplates
             system_prompt = request.system_prompt or PromptTemplates.get_system_prompt(request.language)
             
             data = {
@@ -162,6 +164,8 @@ class DeepSeekProvider(LLMProvider):
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         """Generate text using DeepSeek API"""
         try:
+            # Use delayed import to avoid circular import
+            from src.utils.prompt_templates import PromptTemplates
             system_prompt = request.system_prompt or PromptTemplates.get_system_prompt(request.language)
             
             data = {

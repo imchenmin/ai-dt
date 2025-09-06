@@ -6,6 +6,7 @@ from typing import Dict, Any
 
 
 import json
+from src.test_generation.models import PromptContext
 
 class PromptTemplates:
     """Templates for generating high-quality test generation prompts"""
@@ -23,17 +24,40 @@ class PromptTemplates:
         return PromptTemplates.SYSTEM_PROMPTS.get(language, PromptTemplates.SYSTEM_PROMPTS['default'])
     
     @staticmethod
-    def generate_test_prompt(compressed_context: Dict[str, Any], existing_fixture_code: str = None, suite_name: str = None, existing_tests_context: Dict[str, Any] = None) -> str:
-        """Generate comprehensive test generation prompt with a structured approach."""
-        target = compressed_context['target_function']
-        deps = compressed_context['dependencies']
-        comp = compressed_context['compilation_info']
+    def generate_test_prompt(compressed_context: Dict[str, Any] = None, existing_fixture_code: str = None, suite_name: str = None, existing_tests_context: Dict[str, Any] = None, prompt_context: PromptContext = None) -> str:
+        """
+        Generate comprehensive test generation prompt with a structured approach.
         
-        language = target.get('language', 'c')
-        language_display = 'C++' if language == 'cpp' else 'C'
+        Args:
+            compressed_context: 压缩后的上下文信息（向后兼容）
+            existing_fixture_code: 现有的fixture代码
+            suite_name: 测试套件名称
+            existing_tests_context: 现有测试上下文
+            prompt_context: 结构化的提示词上下文对象（推荐使用）
+        
+        Returns:
+            str: 生成的提示词
+        """
+        # 支持新旧两种调用方式
+        if prompt_context is not None:
+            # 使用新的结构化数据模型
+            ctx = prompt_context
+        else:
+            # 向后兼容：从字典创建PromptContext对象
+            ctx = PromptContext.from_compressed_context(
+                compressed_context, existing_fixture_code, suite_name, existing_tests_context
+            )
+        
+        # 从结构化对象获取信息
+        target = ctx.target_function
+        deps = ctx.dependencies
+        comp = ctx.compilation_info
+        
+        language = target.language.value
+        language_display = target.language.display_name
         
         # Determine if mocking is needed
-        has_external_deps = bool(deps.get('called_functions'))
+        has_external_deps = ctx.has_external_dependencies
 
         prompt_parts = [
             "# 1. 角色与目标 (Role & Goal)",
@@ -41,20 +65,20 @@ class PromptTemplates:
             "你的核心任务是为下方指定的函数，生成一个完整、正确且健壮的Google Test单元测试文件。",
             "",
             "# 2. 被测函数 (Function Under Test - FUT)",
-            f"*   **文件路径:** `{target['location']}`",
-            f"*   **函数签名:** `{target['signature']}`",
+            f"*   **文件路径:** `{target.location}`",
+            f"*   **函数签名:** `{target.signature}`",
             f"*   **函数体:**",
             f"    ```{language_display.lower()}",
-            target['body'],
+            target.body,
             "    ```",
             "",
             "# 3. 上下文与依赖 (Context & Dependencies)"
         ]
 
         # Add dependency definitions if available
-        if deps.get('dependency_definitions'):
+        if deps.dependency_definitions:
             prompt_parts.append("*   **关键依赖项源码:**")
-            for definition in deps['dependency_definitions']:
+            for definition in deps.dependency_definitions:
                 prompt_parts.extend([
                     f"    ```{language_display.lower()}",
                     definition,
@@ -62,35 +86,38 @@ class PromptTemplates:
                 ])
         
         # Add macro definitions if available
-        if deps.get('macro_definitions'):
+        if deps.macro_definitions:
             prompt_parts.append("*   **相关宏定义:**")
-            for macro_def in deps['macro_definitions']:
-                prompt_parts.append(f"    *   `#define {macro_def['name']} {macro_def.get('definition', '')}`")
+            for macro_def in deps.macro_definitions:
+                macro_name = macro_def.name if hasattr(macro_def, 'name') else macro_def['name']
+                macro_definition = macro_def.definition if hasattr(macro_def, 'definition') else macro_def.get('definition', '')
+                prompt_parts.append(f"    *   `#define {macro_name} {macro_definition}`")
         
         # Add existing tests context if available
-        if existing_tests_context:
+        if ctx.existing_tests_context:
             prompt_parts.extend([
                 "",
                 "# 3.1. 现有测试上下文 (Existing Test Context)",
                 "**重要提示:** 以下是在单元测试目录中发现的与当前待测函数相关的现有测试信息，请在生成新测试时参考这些信息，避免重复测试用例，并保持测试风格的一致性。"
             ])
             
-            if existing_tests_context.get('matched_test_files'):
+            if ctx.existing_tests_context.matched_test_files:
                 prompt_parts.append("*   **匹配的测试文件:**")
-                for test_file in existing_tests_context['matched_test_files']:
+                for test_file in ctx.existing_tests_context.matched_test_files:
                     prompt_parts.append(f"    - `{test_file}`")
             
-            if existing_tests_context.get('existing_test_functions'):
+            if ctx.existing_tests_context.existing_test_functions:
                 prompt_parts.append("*   **已存在的测试函数:**")
-                for test_func in existing_tests_context['existing_test_functions']:
-                    target_func = test_func.get('target_function', '未知')
-                    prompt_parts.append(f"    - `{test_func['name']}` (测试目标: {target_func})")
+                for test_func in ctx.existing_tests_context.existing_test_functions:
+                    func_name = test_func.name if hasattr(test_func, 'name') else test_func['name']
+                    target_func = test_func.target_function if hasattr(test_func, 'target_function') else test_func.get('target_function', '未知')
+                    prompt_parts.append(f"    - `{func_name}` (测试目标: {target_func})")
                     # 只显示TEST_F和函数名，不显示详细代码
             
-            if existing_tests_context.get('test_coverage_summary'):
+            if ctx.existing_tests_context.test_coverage_summary:
                 prompt_parts.extend([
                     "*   **测试覆盖总结:**",
-                    f"    {existing_tests_context['test_coverage_summary']}"
+                    f"    {ctx.existing_tests_context.test_coverage_summary}"
                 ])
         
         prompt_parts.extend([
@@ -101,10 +128,12 @@ class PromptTemplates:
 
         if has_external_deps:
             prompt_parts.append("2.  **依赖函数分析:**")
-            for func in deps['called_functions']:
-                mock_status = "可以Mock" if func.get('is_mockable', True) else "不可Mock (static)"
-                declaration = func.get('declaration', f"{func['name']} (...)")
-                prompt_parts.append(f"    *   `{declaration}` - **{mock_status}**")
+            for func in deps.called_functions:
+                func_name = func.name if hasattr(func, 'name') else func['name']
+                func_declaration = func.declaration if hasattr(func, 'declaration') else func.get('declaration', f"{func_name} (...)")
+                is_mockable = func.is_mockable if hasattr(func, 'is_mockable') else func.get('is_mockable', True)
+                mock_status = "可以Mock" if is_mockable else "不可Mock (static)"
+                prompt_parts.append(f"    *   `{func_declaration}` - **{mock_status}**")
 
         # Add comprehensive MockCpp guidance with correct syntax examples
         mockcpp_guidance = [
@@ -157,7 +186,7 @@ class PromptTemplates:
         import os
         import re
         
-        full_path = target['location']
+        full_path = target.location
         # Remove line number if present (e.g., "hash_table.c:145" -> "hash_table.c")
         clean_path = re.sub(r':\d+$', '', full_path)
         filename = os.path.basename(clean_path)  # Get just the filename with extension
@@ -186,27 +215,28 @@ class PromptTemplates:
         ])
         
         # Check if there are existing test classes to use their definition
-        if existing_tests_context and existing_tests_context.get('existing_test_classes'):
+        if ctx.existing_tests_context and ctx.existing_tests_context.existing_test_classes:
             # Use existing test class definition
-            existing_class = existing_tests_context['existing_test_classes'][0]  # Use first class as template
+            existing_class = ctx.existing_tests_context.existing_test_classes[0]  # Use first class as template
+            class_definition = existing_class.definition if hasattr(existing_class, 'definition') else existing_class['definition']
             prompt_parts.extend([
                 "    ```cpp",
-                f"    {existing_class['definition']}",
+                f"    {class_definition}",
                 "    ```",
                 "    **注意:** 以上是基于现有测试类的结构，请保持一致的测试类设计。"
             ])
-        elif existing_tests_context and existing_tests_context.get('existing_test_functions'):
+        elif ctx.existing_tests_context and ctx.existing_tests_context.existing_test_functions:
             # Try to extract test class name from existing test functions
-            existing_test_functions = existing_tests_context['existing_test_functions']
+            existing_test_functions = ctx.existing_tests_context.existing_test_functions
             if existing_test_functions:
                 # Extract class name from TEST_F format: TEST_F(ClassName, TestName)
-                first_test = existing_test_functions[0]['name']
-                if 'TEST_F(' in first_test:
+                first_test_name = existing_test_functions[0].name if hasattr(existing_test_functions[0], 'name') else existing_test_functions[0]['name']
+                if 'TEST_F(' in first_test_name:
                     # Extract class name from TEST_F(ClassName, TestName)
-                    start = first_test.find('TEST_F(') + 7
-                    end = first_test.find(',', start)
+                    start = first_test_name.find('TEST_F(') + 7
+                    end = first_test_name.find(',', start)
                     if end > start:
-                        existing_class_name = first_test[start:end].strip()
+                        existing_class_name = first_test_name[start:end].strip()
                         # Use existing test class structure with the extracted class name
                         prompt_parts.extend([
                             "    ```cpp",
@@ -312,9 +342,12 @@ class PromptTemplates:
         return '\n'.join(prompt_parts)
     
     @staticmethod
-    def generate_memory_function_prompt(compressed_context: Dict[str, Any]) -> str:
+    def generate_memory_function_prompt(compressed_context: Dict[str, Any] = None, prompt_context: PromptContext = None) -> str:
         """Specialized prompt for memory management functions"""
-        base_prompt = PromptTemplates.generate_test_prompt(compressed_context)
+        if prompt_context:
+            base_prompt = PromptTemplates.generate_test_prompt(prompt_context=prompt_context)
+        else:
+            base_prompt = PromptTemplates.generate_test_prompt(compressed_context=compressed_context)
         
         # Add memory-specific guidance
         memory_guidance = """
@@ -340,10 +373,15 @@ class PromptTemplates:
         return base_prompt + memory_guidance
     
     @staticmethod
-    def should_use_memory_template(function_info: Dict[str, Any]) -> bool:
+    def should_use_memory_template(function_info) -> bool:
         """Determine if memory function template should be used"""
-        function_name = function_info.get('name', '').lower()
-        return_type = function_info.get('return_type', '').lower()
+        # Handle both TargetFunction objects and dictionaries
+        if hasattr(function_info, 'name'):
+            function_name = function_info.name.lower()
+            return_type = function_info.return_type.lower() if hasattr(function_info, 'return_type') else ''
+        else:
+            function_name = function_info.get('name', '').lower()
+            return_type = function_info.get('return_type', '').lower()
         
         # Check for memory-related function names
         memory_keywords = ['free', 'delete', 'alloc', 'malloc', 'new', 'release', 'destroy']

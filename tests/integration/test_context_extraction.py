@@ -22,11 +22,11 @@ def test_context_extraction():
     print("=== Testing Context Extraction for LLM ===")
     
     # Test with C project
-    comp_db_path = "test_projects/c/compile_commands.json"
+    comp_db_path = "test_projects/complex_c_project/compile_commands.json"
     parser = CompilationDatabaseParser(comp_db_path)
     compilation_units = parser.parse()
     
-    analyzer = FunctionAnalyzer("test_projects/c")
+    analyzer = FunctionAnalyzer("test_projects/complex_c_project")
     compressor = ContextCompressor()
     
     print("\n--- Analyzing C Functions ---")
@@ -64,11 +64,11 @@ def test_specific_function():
     """Test context extraction for a specific function"""
     print("\n=== Testing Specific Function ===")
     
-    comp_db_path = "test_projects/c/compile_commands.json"
+    comp_db_path = "test_projects/complex_c_project/compile_commands.json"
     parser = CompilationDatabaseParser(comp_db_path)
     compilation_units = parser.parse()
     
-    analyzer = FunctionAnalyzer("test_projects/c")
+    analyzer = FunctionAnalyzer("test_projects/complex_c_project")
     compressor = ContextCompressor()
     
     # Find the 'divide' function specifically

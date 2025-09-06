@@ -46,7 +46,7 @@ class TestPromptGenerator:
         assert generator.context_compressor == mock_compressor
         assert generator.fixture_finder == mock_finder
     
-    @patch('src.test_generation.components.PromptTemplates')
+    @patch('src.utils.prompt_templates.PromptTemplates')
     def test_generate_prompt(self, mock_templates):
         """Test prompt generation"""
         mock_templates.generate_test_prompt.return_value = "Generated prompt"

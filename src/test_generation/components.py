@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .models import GenerationTask, GenerationResult, AggregatedResult
 from src.utils.context_compressor import ContextCompressor
-from src.utils.prompt_templates import PromptTemplates
+# from src.utils.prompt_templates import PromptTemplates  # Moved to avoid circular import
 from src.utils.fixture_finder import FixtureFinder
 from src.utils.file_organizer import TestFileOrganizer
 from src.utils.test_aggregator import TestFileAggregator
@@ -34,6 +34,8 @@ class PromptGenerator:
         )
         
         # Generate prompt using the template
+        # Delayed import to avoid circular import
+        from src.utils.prompt_templates import PromptTemplates
         prompt = PromptTemplates.generate_test_prompt(
             compressed_context,
             existing_fixture_code=task.existing_fixture_code,

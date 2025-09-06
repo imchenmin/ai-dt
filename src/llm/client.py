@@ -8,7 +8,7 @@ from .models import GenerationRequest, GenerationResponse, LLMConfig
 from .factory import LLMProviderFactory
 from .providers import LLMProvider
 from src.utils.logging_utils import get_logger
-from src.utils.prompt_templates import PromptTemplates
+# from src.utils.prompt_templates import PromptTemplates  # Removed to avoid circular import
 
 logger = get_logger(__name__)
 
