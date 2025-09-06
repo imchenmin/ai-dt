@@ -1,5 +1,5 @@
 {# Mock指导部分模板 - 根据语言选择合适的Mock指导 #}
-{% if target_function.language.value in ['c', 'cpp'] %}
+{% if target_function.language.value in ['c', 'c++'] %}
 {% include 'base/sections/cpp_mock_guidance.j2' %}
 {% elif target_function.language.value == 'java' %}
 {% include 'base/sections/java_mock_guidance.j2' %}

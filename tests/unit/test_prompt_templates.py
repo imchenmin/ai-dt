@@ -69,5 +69,55 @@ def test_prompt_templates_with_compressed_context():
 
 
 
+def test_mock_guidance_generation():
+    """Test that mock_guidance is properly generated for C/C++ functions"""
+    
+    # Create compressed context with C++ function that needs mocking
+    compressed_context = {
+        'target_function': {
+            'name': 'process_data',
+            'signature': 'int process_data(const char* data)',
+            'return_type': 'int',
+            'parameters': [{'name': 'data', 'type': 'const char*'}],
+            'body': 'int process_data(const char* data) { return strlen(data); }',
+            'location': '/path/to/file.cpp:20',
+            'language': 'c++',
+            'is_static': False,
+            'access_specifier': 'public'
+        },
+        'dependencies': {
+            'called_functions': [
+                {
+                    'name': 'strlen',
+                    'declaration': 'size_t strlen(const char*);',
+                    'is_mockable': True,
+                    'location': 'string.h:1'
+                }
+            ],
+            'macros': [],
+            'macro_definitions': [],
+            'data_structures': [],
+            'dependency_definitions': []
+        },
+        'usage_patterns': [],
+        'compilation_info': {
+            'key_flags': ['-std=c++11'],
+            'total_flags_count': 1
+        }
+    }
+    
+    # Generate prompt
+    prompt = PromptTemplates.generate_test_prompt(compressed_context)
+    
+    # Verify mock guidance is present and contains MockCpp content
+    assert 'MockCpp' in prompt, "MockCpp guidance should be present in the prompt"
+    assert 'MOCKER' in prompt, "MOCKER macro should be present in MockCpp guidance"
+    assert 'expects' in prompt, "MockCpp expects method should be present"
+    assert 'will' in prompt, "MockCpp will method should be present"
+    
+    # Verify the guidance is specific to C++ (not the fallback C guidance)
+    assert 'CMocka' not in prompt, "Should not contain C-specific mock framework references"
+    
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -125,7 +125,38 @@ class PromptTemplates:
             'needs_mocking': ctx.has_external_dependencies
         }
         
+        # Generate mock_guidance by rendering the mock_guidance.j2 template
+        mock_guidance = PromptTemplates._generate_mock_guidance(ctx)
+        if mock_guidance:
+            context['mock_guidance'] = mock_guidance
+        
         return context
+    
+    @staticmethod
+    def _generate_mock_guidance(ctx: PromptContext) -> str:
+        """Generate mock guidance by rendering the mock_guidance.j2 template
+        
+        Args:
+            ctx: Prompt context
+            
+        Returns:
+            Rendered mock guidance string or empty string if no guidance needed
+        """
+        try:
+            loader = PromptTemplateLoader()
+            
+            # Prepare context for mock_guidance template
+            mock_context = {
+                'target_function': ctx.target_function,
+                'dependencies': ctx.dependencies
+            }
+            
+            # Render the mock_guidance.j2 template
+            return loader.render_template('base/sections/mock_guidance.j2', mock_context)
+        except Exception as e:
+            # If template rendering fails, return empty string
+            print(f"Warning: Failed to render mock_guidance template: {e}")
+            return ""
     
     @staticmethod
     def _extract_existing_tests(existing_tests_context) -> List[str]:
