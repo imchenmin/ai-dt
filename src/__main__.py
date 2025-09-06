@@ -3,6 +3,11 @@
 Main entry point for AI-Driven Test Generator when run as a module
 """
 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 from src.main import main
 
 if __name__ == "__main__":

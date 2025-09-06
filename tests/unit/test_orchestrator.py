@@ -112,7 +112,7 @@ class TestTestGenerationOrchestrator:
         
         # Mock prompt generator
         orchestrator.prompt_generator = Mock()
-        orchestrator.prompt_generator.prepare_task.side_effect = lambda func, ctx, unit_path: GenerationTask(
+        orchestrator.prompt_generator.prepare_task.side_effect = lambda func, ctx, unit_path, existing_tests_ctx=None: GenerationTask(
             function_info=func,
             context=ctx,
             target_filepath=f"test_{func['name']}.cpp",
@@ -268,7 +268,7 @@ class TestTestGenerationOrchestrator:
         
         # Mock all components
         orchestrator.prompt_generator = Mock()
-        orchestrator.prompt_generator.prepare_task.side_effect = lambda func, ctx, unit_path: GenerationTask(
+        orchestrator.prompt_generator.prepare_task.side_effect = lambda func, ctx, unit_path, existing_tests_ctx=None: GenerationTask(
             function_info=func,
             context=ctx,
             target_filepath=f"test_{func['name']}.cpp",

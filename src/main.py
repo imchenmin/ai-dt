@@ -8,6 +8,10 @@ import argparse
 import logging
 import sys
 from typing import Dict, Any, List, Optional
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from src.test_generation.service import TestGenerationService
 from src.utils.config_manager import config_manager

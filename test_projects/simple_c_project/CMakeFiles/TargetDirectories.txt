@@ -1,4 +1,0 @@
-C:/Users/chenmin/ai-dt/test_projects/simple_c_project/CMakeFiles/utils_lib.dir
-C:/Users/chenmin/ai-dt/test_projects/simple_c_project/CMakeFiles/simple_c_project.dir
-C:/Users/chenmin/ai-dt/test_projects/simple_c_project/CMakeFiles/edit_cache.dir
-C:/Users/chenmin/ai-dt/test_projects/simple_c_project/CMakeFiles/rebuild_cache.dir

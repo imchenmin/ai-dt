@@ -63,9 +63,9 @@ projects:
     unit_test_directory_path: "test_projects/complex_c_project/tests" # New optional path
     description: "Complex C project with data structures, algorithms and memory utilities"
     
-    # Use Dify API for this project
-    llm_provider: "dify"
-    model: "dify-model" # Model is usually set in Dify UI
+    # Use DeepSeek API for this project
+    llm_provider: "deepseek"
+    model: "deepseek-coder" # DeepSeek coder model
     
     # Custom output directory for this project
     output_dir: "./experiment/generated_tests_complex_c"

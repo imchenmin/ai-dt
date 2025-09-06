@@ -70,7 +70,8 @@ class TestPromptGenerator:
         mock_templates.generate_test_prompt.assert_called_once_with(
             "compressed_context",
             existing_fixture_code='fixture code',
-            suite_name='Test'
+            suite_name='Test',
+            existing_tests_context=None
         )
     
     def test_prepare_task(self):

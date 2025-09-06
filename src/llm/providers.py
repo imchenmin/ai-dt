@@ -5,8 +5,7 @@ LLM provider implementations following the provider pattern
 import json
 import requests
 from abc import ABC, abstractmethod
-from typing import Optional
-from openai import OpenAI
+from typing import Optional, Dict, Any
 
 from .models import GenerationRequest, GenerationResponse, TokenUsage
 from src.utils.logging_utils import get_logger
@@ -31,7 +30,7 @@ class LLMProvider(ABC):
 
 
 class OpenAIProvider(LLMProvider):
-    """OpenAI API provider implementation"""
+    """OpenAI API provider implementation using requests"""
     
     def __init__(self, api_key: str, base_url: Optional[str] = None, 
                  model: str = "gpt-3.5-turbo", timeout: float = 300.0):
@@ -39,46 +38,86 @@ class OpenAIProvider(LLMProvider):
         self.base_url = base_url or "https://api.openai.com/v1"
         self.model = model
         self.timeout = timeout
-        
-        self.client = OpenAI(
-            api_key=api_key,
-            base_url=self.base_url,
-            timeout=timeout
-        )
     
     @property
     def provider_name(self) -> str:
         return "openai"
+    
+    def _make_request(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Make HTTP request to OpenAI API"""
+        headers = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        url = f"{self.base_url}/chat/completions"
+        response = requests.post(
+            url, 
+            headers=headers, 
+            json=data, 
+            timeout=self.timeout
+        )
+        response.raise_for_status()
+        return response.json()
     
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         """Generate text using OpenAI API"""
         try:
             system_prompt = request.system_prompt or PromptTemplates.get_system_prompt(request.language)
             
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
+            data = {
+                "model": self.model,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": request.prompt}
                 ],
-                max_tokens=request.max_tokens,
-                temperature=request.temperature
+                "max_tokens": request.max_tokens,
+                "temperature": request.temperature
+            }
+            
+            response_data = self._make_request(data)
+            
+            # Extract usage information
+            usage_data = response_data.get('usage', {})
+            usage = TokenUsage(
+                prompt_tokens=usage_data.get('prompt_tokens', 0),
+                completion_tokens=usage_data.get('completion_tokens', 0),
+                total_tokens=usage_data.get('total_tokens', 0)
             )
             
-            usage = TokenUsage(
-                prompt_tokens=response.usage.prompt_tokens,
-                completion_tokens=response.usage.completion_tokens,
-                total_tokens=response.usage.total_tokens
-            )
+            # Extract content from response
+            choices = response_data.get('choices', [])
+            if not choices:
+                raise ValueError("No choices in OpenAI API response")
+            
+            content = choices[0].get('message', {}).get('content', '')
+            if not content:
+                raise ValueError("Empty content in OpenAI API response")
             
             return GenerationResponse(
                 success=True,
-                content=response.choices[0].message.content.strip(),
+                content=content.strip(),
                 usage=usage,
                 model=self.model,
                 provider=self.provider_name
             )
             
+        except requests.exceptions.RequestException as e:
+            logger.error(f"OpenAI API request failed: {e}")
+            return GenerationResponse(
+                success=False,
+                error=f"Network error calling OpenAI API: {e}",
+                model=self.model,
+                provider=self.provider_name
+            )
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.error(f"OpenAI API response parsing failed: {e}")
+            return GenerationResponse(
+                success=False,
+                error=f"Invalid response from OpenAI API: {e}",
+                model=self.model,
+                provider=self.provider_name
+            )
         except Exception as e:
             logger.error(f"OpenAI generation failed: {e}")
             return GenerationResponse(
@@ -90,7 +129,7 @@ class OpenAIProvider(LLMProvider):
 
 
 class DeepSeekProvider(LLMProvider):
-    """DeepSeek API provider implementation"""
+    """DeepSeek API provider implementation using requests"""
     
     def __init__(self, api_key: str, base_url: Optional[str] = None,
                  model: str = "deepseek-chat", timeout: float = 300.0):
@@ -98,47 +137,86 @@ class DeepSeekProvider(LLMProvider):
         self.base_url = base_url or "https://api.deepseek.com/v1"
         self.model = model
         self.timeout = timeout
-        
-        # DeepSeek uses OpenAI-compatible API
-        self.client = OpenAI(
-            api_key=api_key,
-            base_url=self.base_url,
-            timeout=timeout
-        )
     
     @property
     def provider_name(self) -> str:
         return "deepseek"
+    
+    def _make_request(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Make HTTP request to DeepSeek API"""
+        headers = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        url = f"{self.base_url}/chat/completions"
+        response = requests.post(
+            url, 
+            headers=headers, 
+            json=data, 
+            timeout=self.timeout
+        )
+        response.raise_for_status()
+        return response.json()
     
     def generate(self, request: GenerationRequest) -> GenerationResponse:
         """Generate text using DeepSeek API"""
         try:
             system_prompt = request.system_prompt or PromptTemplates.get_system_prompt(request.language)
             
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
+            data = {
+                "model": self.model,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": request.prompt}
                 ],
-                max_tokens=request.max_tokens,
-                temperature=request.temperature
+                "max_tokens": request.max_tokens,
+                "temperature": request.temperature
+            }
+            
+            response_data = self._make_request(data)
+            
+            # Extract usage information
+            usage_data = response_data.get('usage', {})
+            usage = TokenUsage(
+                prompt_tokens=usage_data.get('prompt_tokens', 0),
+                completion_tokens=usage_data.get('completion_tokens', 0),
+                total_tokens=usage_data.get('total_tokens', 0)
             )
             
-            usage = TokenUsage(
-                prompt_tokens=response.usage.prompt_tokens,
-                completion_tokens=response.usage.completion_tokens,
-                total_tokens=response.usage.total_tokens
-            )
+            # Extract content from response
+            choices = response_data.get('choices', [])
+            if not choices:
+                raise ValueError("No choices in DeepSeek API response")
+            
+            content = choices[0].get('message', {}).get('content', '')
+            if not content:
+                raise ValueError("Empty content in DeepSeek API response")
             
             return GenerationResponse(
                 success=True,
-                content=response.choices[0].message.content.strip(),
+                content=content.strip(),
                 usage=usage,
                 model=self.model,
                 provider=self.provider_name
             )
             
+        except requests.exceptions.RequestException as e:
+            logger.error(f"DeepSeek API request failed: {e}")
+            return GenerationResponse(
+                success=False,
+                error=f"Network error calling DeepSeek API: {e}",
+                model=self.model,
+                provider=self.provider_name
+            )
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.error(f"DeepSeek API response parsing failed: {e}")
+            return GenerationResponse(
+                success=False,
+                error=f"Invalid response from DeepSeek API: {e}",
+                model=self.model,
+                provider=self.provider_name
+            )
         except Exception as e:
             logger.error(f"DeepSeek generation failed: {e}")
             return GenerationResponse(
