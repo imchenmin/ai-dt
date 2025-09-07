@@ -170,6 +170,14 @@ class ConfigManager:
         try:
             config = self.get_llm_config(provider)
             api_key_env = config.get('api_key_env')
+            
+            # Special handling for dify_web provider
+            if provider == 'dify_web':
+                curl_file_path = os.environ.get(api_key_env)
+                if curl_file_path and os.path.exists(curl_file_path):
+                    return True
+                return False
+            
             return bool(api_key_env and os.environ.get(api_key_env))
         except ValueError:
             return False
@@ -210,6 +218,12 @@ class ConfigManager:
                 "default_model": "dify-model",
                 "base_url": "https://api.dify.ai/v1/chat-messages",
                 "models": ["dify-model"]
+            },
+            "dify_web": {
+                "api_key_env": "DIFY_CURL_FILE_PATH",
+                "default_model": "dify_web_model",
+                "base_url": "web_simulation",
+                "models": ["dify_web_model"]
             }
         }
         

@@ -203,6 +203,7 @@ class TestLLMConfig:
         assert config.retry_delay == 1.0
         assert config.timeout == 300.0
         assert config.rate_limit is None
+        assert config.curl_file_path is None
         assert config.retry_enabled is True
         assert config.rate_limit_enabled is False
         assert config.logging_enabled is True
@@ -218,6 +219,7 @@ class TestLLMConfig:
             retry_delay=2.0,
             timeout=600.0,
             rate_limit=10.0,
+            curl_file_path="/path/to/curl/file.txt",
             retry_enabled=False,
             rate_limit_enabled=True,
             logging_enabled=False
@@ -231,6 +233,7 @@ class TestLLMConfig:
         assert config.retry_delay == 2.0
         assert config.timeout == 600.0
         assert config.rate_limit == 10.0
+        assert config.curl_file_path == "/path/to/curl/file.txt"
         assert config.retry_enabled is False
         assert config.rate_limit_enabled is True
         assert config.logging_enabled is False
@@ -252,6 +255,40 @@ class TestLLMConfig:
         
         with pytest.raises(ValueError, match="timeout must be positive"):
             LLMConfig(provider_name="test", timeout=-10)
+    
+    def test_curl_file_path_for_dify_web(self):
+        """Test curl_file_path field specifically for dify_web provider"""
+        # Test with dify_web provider and curl_file_path
+        config = LLMConfig(
+            provider_name="dify_web",
+            curl_file_path="/path/to/dify.curl"
+        )
+        
+        assert config.provider_name == "dify_web"
+        assert config.curl_file_path == "/path/to/dify.curl"
+        
+        # Test with other provider and curl_file_path (should still work)
+        config2 = LLMConfig(
+            provider_name="openai",
+            curl_file_path="/some/curl/file.txt"
+        )
+        
+        assert config2.provider_name == "openai"
+        assert config2.curl_file_path == "/some/curl/file.txt"
+    
+    def test_curl_file_path_none_by_default(self):
+        """Test that curl_file_path is None by default"""
+        config = LLMConfig(provider_name="test")
+        assert config.curl_file_path is None
+    
+    def test_curl_file_path_empty_string(self):
+        """Test curl_file_path with empty string"""
+        config = LLMConfig(
+            provider_name="dify_web",
+            curl_file_path=""
+        )
+        
+        assert config.curl_file_path == ""
 
 
 class TestLLMProviderFactory:
@@ -318,6 +355,71 @@ class TestLLMProviderFactory:
         
         with pytest.raises(ValueError, match="API key required for provider: openai"):
             LLMProviderFactory.create_provider(config)
+    
+    def test_create_dify_web_provider_with_curl_file_path(self):
+        """Test creating dify_web provider with curl_file_path"""
+        import tempfile
+        import os
+        
+        # Create a temporary curl file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.curl', delete=False) as f:
+            f.write('curl "https://example.com/api" -H "Content-Type: application/json" --data-raw "{\"query\":\"test\"}"')
+            curl_file_path = f.name
+        
+        try:
+            config = LLMConfig(
+                provider_name="dify_web",
+                curl_file_path=curl_file_path
+            )
+            
+            provider = LLMProviderFactory.create_provider(config)
+            assert provider is not None
+            assert "dify_web" in provider.provider_name  # Provider name includes decorators
+            
+            # Access the base provider through the decorator chain
+            base_provider = provider
+            while hasattr(base_provider, 'provider'):
+                base_provider = base_provider.provider
+            
+            assert base_provider.curl_file_path == curl_file_path
+        finally:
+            os.unlink(curl_file_path)
+    
+    def test_create_dify_web_provider_no_curl_file_path(self):
+        """Test creating dify_web provider without curl_file_path raises error"""
+        config = LLMConfig(provider_name="dify_web")  # No curl_file_path
+        
+        with pytest.raises(ValueError, match="curl_file_path required for provider: dify_web"):
+            LLMProviderFactory.create_provider(config)
+    
+    def test_create_dify_web_provider_with_api_key_fallback(self):
+        """Test creating dify_web provider using api_key as fallback for curl_file_path"""
+        import tempfile
+        import os
+        
+        # Create a temporary curl file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.curl', delete=False) as f:
+            f.write('curl "https://example.com/api" -H "Content-Type: application/json" --data-raw "{\"query\":\"test\"}"')
+            curl_file_path = f.name
+        
+        try:
+            config = LLMConfig(
+                provider_name="dify_web",
+                api_key=curl_file_path  # Using api_key as fallback
+            )
+            
+            provider = LLMProviderFactory.create_provider(config)
+            assert provider is not None
+            assert "dify_web" in provider.provider_name  # Provider name includes decorators
+            
+            # Access the base provider through the decorator chain
+            base_provider = provider
+            while hasattr(base_provider, 'provider'):
+                base_provider = base_provider.provider
+            
+            assert base_provider.curl_file_path == curl_file_path
+        finally:
+            os.unlink(curl_file_path)
     
     def test_register_provider(self):
         """Test registering custom provider"""
@@ -508,6 +610,37 @@ class TestLLMClient:
         assert client.provider_name == "mock"
         assert client.model == "test-model"
         assert client.max_retries == 5
+    
+    def test_create_from_config_with_curl_file_path(self):
+        """Test creating client from config with curl_file_path for dify_web"""
+        import tempfile
+        import os
+        
+        # Create a temporary curl file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.curl', delete=False) as f:
+            f.write('curl "https://example.com/api" -H "Content-Type: application/json" --data-raw "{\"query\":\"test\"}"')
+            curl_file_path = f.name
+        
+        try:
+            config = LLMConfig(
+                provider_name="dify_web",
+                model="dify_web_model",
+                curl_file_path=curl_file_path
+            )
+            
+            client = LLMClient.create_from_config(config)
+            
+            assert client.provider_name == "dify_web"
+            assert client.model == "dify_web_model"
+            
+            # Access the base provider through the decorator chain
+            base_provider = client.provider
+            while hasattr(base_provider, 'provider'):
+                base_provider = base_provider.provider
+            
+            assert base_provider.curl_file_path == curl_file_path
+        finally:
+            os.unlink(curl_file_path)
     
     def test_create_mock_client(self):
         """Test creating mock client"""

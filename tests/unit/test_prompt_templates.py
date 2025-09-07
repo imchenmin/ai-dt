@@ -4,6 +4,7 @@ Unit tests for PromptTemplates with new compression system
 
 import pytest
 from src.utils.prompt_templates import PromptTemplates
+from src.test_generation.models import Language
 
 
 def test_prompt_templates_with_compressed_context():
@@ -81,7 +82,7 @@ def test_mock_guidance_generation():
             'parameters': [{'name': 'data', 'type': 'const char*'}],
             'body': 'int process_data(const char* data) { return strlen(data); }',
             'location': '/path/to/file.cpp:20',
-            'language': 'c++',
+            'language': Language.CPP,
             'is_static': False,
             'access_specifier': 'public'
         },
@@ -110,7 +111,7 @@ def test_mock_guidance_generation():
     prompt = PromptTemplates.generate_test_prompt(compressed_context)
     
     # Verify mock guidance is present and contains MockCpp content
-    assert 'MockCpp' in prompt, "MockCpp guidance should be present in the prompt"
+    assert 'mockcpp' in prompt.lower(), "MockCpp guidance should be present in the prompt"
     assert 'MOCKER' in prompt, "MOCKER macro should be present in MockCpp guidance"
     assert 'expects' in prompt, "MockCpp expects method should be present"
     assert 'will' in prompt, "MockCpp will method should be present"

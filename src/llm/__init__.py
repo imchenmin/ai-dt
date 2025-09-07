@@ -3,7 +3,7 @@ LLM module with improved architecture for better maintainability and extensibili
 """
 
 from .models import GenerationRequest, GenerationResponse, TokenUsage, LLMConfig
-from .providers import LLMProvider, OpenAIProvider, DeepSeekProvider, DifyProvider, MockProvider
+from .providers import LLMProvider, OpenAIProvider, DeepSeekProvider, DifyProvider, MockProvider, DifyWebProvider
 from .decorators import RetryDecorator, RateLimitDecorator, LoggingDecorator
 from .factory import LLMProviderFactory
 from .client import LLMClient
@@ -18,6 +18,7 @@ __all__ = [
     'DeepSeekProvider',
     'DifyProvider',
     'MockProvider',
+    'DifyWebProvider',
     'RetryDecorator',
     'RateLimitDecorator',
     'LoggingDecorator',

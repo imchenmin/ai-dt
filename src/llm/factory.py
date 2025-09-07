@@ -4,7 +4,7 @@ Factory for creating configured LLM providers
 
 from typing import Dict, Type
 
-from .providers import LLMProvider, OpenAIProvider, DeepSeekProvider, DifyProvider, MockProvider
+from .providers import LLMProvider, OpenAIProvider, DeepSeekProvider, DifyProvider, MockProvider, DifyWebProvider
 from .decorators import RetryDecorator, RateLimitDecorator, LoggingDecorator, ValidationDecorator
 from .models import LLMConfig
 from src.utils.logging_utils import get_logger
@@ -20,6 +20,7 @@ class LLMProviderFactory:
         'openai': OpenAIProvider,
         'deepseek': DeepSeekProvider,
         'dify': DifyProvider,
+        'dify_web': DifyWebProvider,
         'mock': MockProvider
     }
     
@@ -70,6 +71,17 @@ class LLMProviderFactory:
         # Handle mock provider (no API key needed)
         if config.provider_name.lower() == 'mock':
             return provider_class(model=config.model)
+        
+        # Handle dify_web provider (needs curl_file_path instead of api_key)
+        if config.provider_name.lower() == 'dify_web':
+            curl_file_path = getattr(config, 'curl_file_path', None) or config.api_key
+            if not curl_file_path:
+                raise ValueError(f"curl_file_path required for provider: {config.provider_name}")
+            return provider_class(
+                curl_file_path=curl_file_path,
+                model=config.model,
+                timeout=config.timeout
+            )
         
         # Validate API key for real providers
         if not config.api_key:

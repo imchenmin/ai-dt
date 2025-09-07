@@ -155,7 +155,12 @@ class TargetFunction:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'TargetFunction':
         """从字典创建TargetFunction实例"""
-        language = Language(data.get('language', 'c'))
+        language_value = data.get('language', 'c')
+        # Handle both string and Language enum values
+        if isinstance(language_value, Language):
+            language = language_value
+        else:
+            language = Language(language_value)
         parameters = [Parameter(**param) if isinstance(param, dict) else Parameter(name=param.get('name', ''), type=param.get('type', '')) 
                      for param in data.get('parameters', [])]
         

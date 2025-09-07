@@ -77,6 +77,7 @@ class LLMConfig:
     retry_delay: float = 1.0
     timeout: float = 300.0
     rate_limit: Optional[float] = None
+    curl_file_path: Optional[str] = None  # For dify_web provider
     
     # Feature flags
     retry_enabled: bool = True
