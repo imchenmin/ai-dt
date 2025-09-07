@@ -1,26 +1,23 @@
-# 角色与目标
-你是一个专业的C语言测试用例生成专家。你的任务是为给定的C函数生成高质量、全面的单元测试用例。
+# C Unit Test Generation
 
-# 被测函数
-**函数名称**: {{target_function_name}}
-**函数位置**: {{target_location}}
-**函数签名**:
+**TARGET_FUNCTION**: {{target_function_name}}
+**LOCATION**: {{target_location}}
+**SIGNATURE**:
 ```c
 {{function_signature}}
 ```
 
 {% if function_body -%}
-**函数实现**:
+**IMPLEMENTATION**:
 ```c
 {{function_body}}
 ```
 {% endif %}
 
-# 上下文与依赖
+**CONTEXT_DATA**:
 
-## 依赖定义
 {% if dependency_definitions -%}
-以下是被测函数依赖的结构体、枚举、宏定义等：
+**DEPENDENCIES**:
 ```c
 {% for dep in dependency_definitions -%}
 {{dep}}
@@ -28,9 +25,8 @@
 ```
 {% endif %}
 
-## 宏定义
 {% if macro_definitions -%}
-以下是相关的宏定义：
+**MACROS**:
 ```c
 {% for macro in macro_definitions -%}
 {{macro}}
@@ -38,138 +34,110 @@
 ```
 {% endif %}
 
-## 调用的函数
 {% if called_functions -%}
-被测函数调用了以下函数：
+**CALLED_FUNCTIONS**:
 {% for func in called_functions -%}
-- `{{func.name}}`: {{func.description or '需要Mock的函数'}}
+- {{func.name}}: {{func.description or 'MOCK_REQUIRED'}}
 {% endfor %}
 {% endif %}
-
-## 现有测试上下文
 {% if existing_tests and existing_tests|length > 0 -%}
-以下是项目中已存在的相关测试，请参考其风格和模式：
+**EXISTING_TEST_PATTERNS**:
 ```c
 {% for test in existing_tests -%}
 {{test}}
-
 {% endfor -%}
 ```
 {% endif %}
 
-## 依赖分析
 {% if dependency_analysis -%}
-{{dependency_analysis}}
+**DEPENDENCY_ANALYSIS**: {{dependency_analysis}}
 {% endif %}
 
-# 测试生成要求
+**FRAMEWORK_REQUIREMENTS**:
+- Framework: Google Test (gtest)
+- Test class: inherit from `::testing::Test`
+- Test macros: `TEST_F`
+- Assertions: `EXPECT_EQ`, `EXPECT_NE`, `EXPECT_TRUE`, `EXPECT_FALSE`, `ASSERT_*`
+- C wrapper: `extern "C"` required
 
-## Google Test框架要求
-- 使用Google Test (gtest)框架进行C语言测试
-- 测试类继承自`::testing::Test`
-- 使用`TEST_F`宏定义测试用例
-- 使用适当的断言宏：`EXPECT_EQ`, `EXPECT_NE`, `EXPECT_TRUE`, `EXPECT_FALSE`, `ASSERT_*`等
-- 注意C语言的特殊性：需要使用extern "C"包装C函数
-
-## Mock指导
+**MOCK_INSTRUCTIONS**:
 {% if mock_guidance -%}
 {{mock_guidance}}
 {% else -%}
-对于C语言函数的Mock：
-- 使用MockCpp框架进行函数Mock
-- 对于系统调用和库函数，使用函数指针替换
-- 注意C语言没有函数重载，Mock时需要特别处理
-- 对于C函数，使用函数指针或条件编译进行Mock
-- 考虑使用CMocka或其他C Mock框架
-- 注意C语言的内存管理和指针操作
+- Use MockCpp framework for function mocking
+- System calls: function pointer replacement
+- C functions: function pointers or conditional compilation
+- Memory management: careful pointer operations
 {% endif %}
 
-## 核心测试场景
-请确保覆盖以下测试场景：
-1. **正常路径测试**: 验证函数在正常输入下的预期行为
-2. **边界值测试**: 测试边界条件和极值情况（如0, -1, INT_MAX, INT_MIN）
-3. **异常处理测试**: 验证错误输入和异常情况的处理
-4. **空值/NULL测试**: 测试空指针、空字符串等特殊输入
-5. **内存管理测试**: 验证动态内存分配和释放的正确性
-6. **缓冲区溢出测试**: 测试字符串和数组边界
+**MANDATORY_TEST_SCENARIOS**:
+1. Normal path: expected behavior with valid inputs
+2. Boundary values: 0, -1, INT_MAX, INT_MIN
+3. Error handling: invalid inputs and exceptions
+4. NULL tests: null pointers, empty strings
+5. Memory management: malloc/free correctness
+6. Buffer overflow: string and array boundaries
 
-## 断言要求
-- 每个测试用例必须包含明确的断言
-- 断言应该验证函数的返回值、输出参数、副作用等
-- 使用描述性的断言消息，便于调试
-- 特别注意C语言的指针和内存相关断言
+**ASSERTION_RULES**:
+- Every test MUST contain explicit assertions
+- Verify: return values, output parameters, side effects
+- Use descriptive assertion messages
+- Focus on pointer and memory assertions for C
 
-# 代码结构与命名规范
-
-## 测试类结构
+**CODE_STRUCTURE_TEMPLATE**:
 {% if test_class_structure -%}
 {{test_class_structure}}
 {% else -%}
 ```cpp
 extern "C" {
-    #include "{{target_function_name}}.h"  // 包含被测函数的头文件
+    #include "{{filename}}.h"
 }
 
-class {{target_function_name|title}}Test : public ::testing::Test {
+class {{filename}}_test : public ::testing::Test {
 protected:
     void SetUp() override {
-        // 测试前的初始化
-        // 初始化全局变量、分配内存等
+        // Initialize globals, allocate memory
     }
-    
     void TearDown() override {
-        // 测试后的清理
-        // 释放内存、重置全局状态等
+        // Free memory, reset global state
     }
-    
-    // 测试辅助方法和成员变量
 };
 ```
 {% endif %}
 
-## 命名规范
-- 测试类名：`{{target_function_name|title}}Test`
-- 测试方法名：使用描述性名称，如`test_NormalCase_ReturnsExpectedValue`
-- 变量名：使用清晰、描述性的名称
-- 遵循C语言命名约定（下划线分隔）
+**NAMING_CONVENTIONS**:
+- Test methods: `{{target_function_name}}_when_condition_should_result`
+- Variables: descriptive_names_with_underscores
 
-# C语言特殊考虑
+**C_LANGUAGE_CONSTRAINTS**:
 
-## 内存管理
-- 对于使用malloc/free的函数，确保测试内存泄漏
-- 使用valgrind或类似工具检测内存问题
-- 测试NULL指针的处理
-- 确保正确管理内存分配和释放
-- 测试指针参数的边界情况
-- 验证函数对全局变量的影响
+**GLOBAL_VARIABLES**:
+- Reset global state in SetUp/TearDown
+- Test global variable side effects
 
-## 全局变量
-- 注意全局变量的状态管理
-- 在SetUp/TearDown中重置全局状态
-- 测试全局变量的副作用
+**STRING_HANDLING**:
+- Test string boundary conditions
+- Verify null terminator handling
+- Test buffer overflow protection
 
-## 字符串处理
-- 测试字符串边界条件
-- 验证字符串终止符的正确处理
-- 测试缓冲区溢出保护
+**GENERATION_INSTRUCTIONS**:
 
-# 指令与输出格式
+Generate complete C test code with:
+1. Complete test file with headers and extern "C"
+2. Test class with SetUp/TearDown methods
+3. Multiple test cases covering all scenarios
+4. Appropriate mocks (if needed)
+5. Clear comments explaining test purpose
+6. C coding standards compliance
 
-请基于以上信息生成完整的C语言测试代码。输出应该：
+**QUALITY_REQUIREMENTS**:
+- Syntax correct, directly compilable
+- Proper C memory management
+- Clear logic, maintainable
+- Comprehensive coverage
+- Error handling and boundary tests
+- C pointer and memory safety focus
 
-1. **包含完整的测试文件**，包括必要的头文件和extern "C"声明
-2. **实现测试类**，包含适当的SetUp和TearDown方法
-3. **生成多个测试用例**，覆盖不同的测试场景
-4. **使用适当的Mock**（如果需要）
-5. **包含清晰的注释**，解释测试目的和预期结果
-6. **遵循C语言编码规范**和命名约定
+**OUTPUT_FORMAT**: Complete C++ test file with GoogleTest framework
 
-请确保生成的测试代码：
-- 语法正确，可以直接编译运行
-- 正确处理C语言的内存管理
-- 逻辑清晰，易于理解和维护
-- 覆盖面广，能够有效验证函数功能
-- 包含适当的错误处理和边界测试
-- 特别注意C语言的指针和内存安全
-
-开始生成C语言测试代码：
+Generate C test code:

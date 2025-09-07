@@ -1,52 +1,69 @@
-{# C/C++ MockCpp指导部分模板 #}
+{# MockCpp Code Generation Template - Optimized for LLM #}
 {% if dependencies.called_functions and dependencies.called_functions|length > 0 %}
-2.  **Mock要求:** 为以下外部依赖函数生成Mock：
+2. **MOCK_REQUIREMENTS**: Generate mocks for these external dependencies:
 {% for func in dependencies.called_functions %}
-    *   `{{ func.name }}`: {{ func.signature }}
+   - Function: `{{ func.name }}` | Signature: `{{ func.signature }}`
 {% endfor %}
 
-3.  **MockCpp使用指导 (正确语法):**
-    *   **语言:** {{ target_function.language.display_name }}
-    *   **Mock方法:** 使用 `MOCKER(function_name)` 进行函数Mock
-    *   **正确语法示例 (不要使用Google Mock语法):**
-        ```cpp
-        // 正确: MockCpp链式调用
-        MOCKER(custom_function)
-            .stubs()
-            .with(eq(42))
-            .will(returnValue(100));
-        
-        // 正确: 带调用次数验证
-        MOCKER(create_node)
-            .expects(once())
-            .with(eq(42))
-            .will(returnValue(&mock_node));
-        
-        // 错误: 不要使用Google Mock语法
-        // mock().expectOneCall("malloc").withParameter("size", size).andReturnValue(ptr);
-        ```
-    *   **核心方法:**
-        - `.stubs()` - 不校验调用次数
-        - `.defaults()` - 定义默认行为，优先级最低
-        - `.expects(times)` - 校验调用次数 (`once()/never()/exactly(n)/atLeast(n)/atMost(n)`)
-        - `.with(constraints)` - 参数约束 (`eq(v)/neq(v)/any()/spy(var)/outBound(var)/outBoundP(ptr,size)`)
-        - `.will(behavior)` - 函数行为 (`returnValue(v)/returnObjectList(v1,v2)/repeat(v,t)/ignoreReturnValue()/throws(e)`)
-    *   **验证:** 在teardown中使用 `GlobalMockObject::verify()`
-    *   **重要限制:**
-        - **不能Mock系统函数**: 如 `fabs`, `strcmp`, `malloc`, `free` 等标准库函数
-        - **不能Mock可变参数函数**: 如 `printf`, `scanf` 等
-        - **不能Mock内联函数**: 编译器内联优化的函数
-        - **只能Mock自定义函数**: 优先Mock项目内的辅助函数和工具函数
-    *   **最佳实践:**
-        - 使用`MOCKER(function)`Mock C函数和静态成员函数
-        - 使用`MockObject<Class>obj;MOCK_METHOD(obj,method)`Mock类成员函数
-        - 有返回值函数必须使用`.will(...)`指定返回值
-        - 避免Mock标准库函数和系统调用
-        - 优先Mock自定义辅助函数和工具函数
-        - 使用`.id()`和`.before()/.after()`进行调用顺序验证
-        - 使用`.with()`进行参数验证和输出参数设置
-        - **指针参数**: 使用 `outBoundP(ptr, size)` 而不是 `outBound(var)` 设置指针输出参数
+3. **MOCKCPP_SYNTAX_RULES**:
+   **LANGUAGE**: {{ target_function.language.display_name }}
+   **MANDATORY_CHAIN_ORDER**: MOCKER(func) -> [.stubs()|.expects()] -> [.with()] -> .will()
+   
+   **BASIC_PATTERNS**:
+   ```cpp
+   // Pattern 1: Simple stub
+   MOCKER(function_name).stubs().with(any()).will(returnValue(value));
+   
+   // Pattern 2: Expectation with count
+   MOCKER(function_name).expects(once()).with(constraints).will(action);
+   ```
+   **OUTPUT_PARAMETER_RULES**:
+   ```cpp
+   // RULE: Use outBoundP(ptr, size) for non-const pointer outputs
+   int data = 42;
+   MOCKER(func).stubs().with(any(), outBoundP((int*)&data, sizeof(int))).will(returnValue(0));
+   
+   // RULE: Never use outBoundP with const parameters
+   MOCKER(func).stubs().with(eq((const char*)"value")).will(returnValue(0));
+   ```
+   **METHOD_REFERENCE**:
+   - SETUP: .stubs() | .defaults() | .expects(never()|once()|exactly(n)|atLeast(n)|atMost(n))
+   - CONSTRAINTS: .with(any()|eq(v)|neq(v)|gt(v)|lt(v)|spy(var)|checkWith(func)|outBound(var)|outBoundP(ptr,size)|mirror(ptr,size))
+   - ACTIONS: .will(returnValue(v)|repeat(v,times)|returnObjectList(r1,r2)|invoke(func)|increase(from,to)|throws(e)|die(code))
+   **TEST_STRUCTURE_TEMPLATE**:
+   ```cpp
+   TEST_F(TestClass, TestMethod) {
+       // Setup mocks
+       MOCKER(func).stubs().will(returnValue(value));
+       // Execute
+       result = target_function();
+       // Verify
+       EXPECT_EQ(expected, result);
+       // Mock verification (automatic in teardown)
+   }
+   ```
+   **CONSTRAINTS**:
+   - NEVER mock: malloc, free, printf, strcpy, system functions
+   - ONLY mock: project-defined functions
+   - NEVER redefine: TEST, TEST_F, EXPECT_* macros (provided by gtest.h)
+   - ALWAYS match: pointer types exactly in outBoundP
+   
+   **REQUIRED_INCLUDES**:
+   ```cpp
+   #include <gtest/gtest.h>
+   #include <mockcpp/mockcpp.hpp>
+   extern "C" { #include "target_header.h" }
+   ```
+   
+   **GENERATION_RULES**:
+   - Use MOCKER(function_name) for C functions and static methods
+   - Use MockObject<Class> obj; MOCK_METHOD(obj,method) for class methods
+   - Always specify .will() for functions with return values
+   - Use outBound(var) for reference parameters, outBoundP(ptr,size) for pointer arrays
+   - Use spy(var) to capture input values for verification
+   - Ensure exact type matching between mock and function signature
+   - Call GlobalMockObject::verify() in teardown for verification
 {% else %}
 2.  **无外部依赖:** 此函数没有外部依赖，无需Mock。
-3.  **专注单元测试:** 重点测试函数的内部逻辑和边界条件。
+3.  **专注单元测试:** 重点测试函数的内部逻辑和边界条件。直接编写单元测试即可。
 {% endif %}
