@@ -102,6 +102,12 @@
 # 代码结构与命名规范
 
 ## 测试类结构
+{% if existing_fixture_code -%}
+**EXISTING_FIXTURE**:
+```cpp
+{{existing_fixture_code}}
+```
+{% endif -%}
 {% if test_class_structure -%}
 {{test_class_structure}}
 {% else -%}
@@ -110,7 +116,11 @@
 #include <gmock/gmock.h>
 #include "{{target_function_name}}.h"  // 包含被测函数的头文件
 
+{% if suite_name -%}
+class {{suite_name}} : public ::testing::Test {
+{% else -%}
 class {{target_function_name|title}}Test : public ::testing::Test {
+{% endif -%}
 protected:
     void SetUp() override {
         // 测试前的初始化
@@ -129,7 +139,11 @@ protected:
 {% endif %}
 
 ## 命名规范
+{% if suite_name -%}
+- 测试类名：`{{suite_name}}`
+{% else -%}
 - 测试类名：`{{target_function_name|title}}Test`
+{% endif -%}
 - 测试方法名：使用描述性名称，如`ShouldReturnExpectedValue_WhenGivenValidInput`
 - 变量名：使用清晰、描述性的名称
 - 遵循C++命名约定（驼峰命名法或下划线分隔）

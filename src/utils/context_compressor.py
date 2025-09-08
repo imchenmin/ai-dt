@@ -324,10 +324,18 @@ class ContextCompressor:
         
         return compressed_context
     
-    def format_for_llm_prompt(self, compressed_context: Dict[str, Any]) -> str:
+    def format_for_llm_prompt(self, compressed_context: Dict[str, Any], 
+                              existing_fixture_code: str = None,
+                              suite_name: str = None,
+                              existing_tests_context: Dict[str, Any] = None) -> str:
         """Format compressed context for LLM prompt using templates"""
         # Use delayed import to avoid circular import
         from .prompt_templates import PromptTemplates
         
         # Use general template for all functions
-        return PromptTemplates.generate_test_prompt(compressed_context)
+        return PromptTemplates.generate_test_prompt(
+            compressed_context=compressed_context,
+            existing_fixture_code=existing_fixture_code,
+            suite_name=suite_name,
+            existing_tests_context=existing_tests_context
+        )

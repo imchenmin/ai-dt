@@ -48,8 +48,8 @@ class TestTestFileMatcher(unittest.TestCase):
     
     def test_init(self):
         """测试初始化"""
-        self.assertEqual(self.matcher.project_path, self.project_path)
-        self.assertEqual(self.matcher.test_directory, self.test_dir)
+        self.assertEqual(self.matcher.project_path, self.project_path.resolve())
+        self.assertEqual(self.matcher.test_directory, self.test_dir.resolve())
     
     def test_is_test_file(self):
         """测试测试文件识别"""

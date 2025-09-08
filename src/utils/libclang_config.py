@@ -62,6 +62,7 @@ class LibclangConfig:
                 '/usr/lib/llvm-14/lib/libclang.so',
                 '/usr/lib/llvm-16/lib/libclang.so.1',
                 '/usr/lib/llvm-16/lib/libclang.so',
+                '/Library/Developer/CommandLineTools/usr/lib/libclang.dylib',  # macOS Xcode Command Line Tools
                 '/usr/local/opt/llvm/lib/libclang.dylib',  # macOS Homebrew
                 'C:\\Program Files\\LLVM\\bin\\libclang.dll',  # Windows
             ]

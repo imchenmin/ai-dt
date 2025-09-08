@@ -1,26 +1,26 @@
 [
 {
-  "directory": "C:/Users/chenmin/ai-dt/test_projects/complex_c_project/build",
-  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\gcc.exe -DTEST_MODE_FULL @CMakeFiles/complex_app.dir/includes_C.rsp  -g -O0 -Wall -Wextra -DTEST_MODE_FULL -g -std=gnu11 -o CMakeFiles\\complex_app.dir\\main.c.obj -c C:\\Users\\chenmin\\ai-dt\\test_projects\\complex_c_project\\main.c",
-  "file": "C:/Users/chenmin/ai-dt/test_projects/complex_c_project/main.c",
-  "output": "CMakeFiles/complex_app.dir/main.c.obj"
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/data_structures -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/utils  -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -mmacosx-version-min=14.2 -o CMakeFiles/complex_app.dir/main.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/main.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/main.c",
+  "output": "CMakeFiles/complex_app.dir/main.c.o"
 },
 {
-  "directory": "C:/Users/chenmin/ai-dt/test_projects/complex_c_project/build",
-  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\gcc.exe -DTEST_MODE_FULL @CMakeFiles/complex_app.dir/includes_C.rsp  -g -O0 -Wall -Wextra -DTEST_MODE_FULL -g -std=gnu11 -o CMakeFiles\\complex_app.dir\\data_structures\\linked_list.c.obj -c C:\\Users\\chenmin\\ai-dt\\test_projects\\complex_c_project\\data_structures\\linked_list.c",
-  "file": "C:/Users/chenmin/ai-dt/test_projects/complex_c_project/data_structures/linked_list.c",
-  "output": "CMakeFiles/complex_app.dir/data_structures/linked_list.c.obj"
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/data_structures -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/utils  -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -mmacosx-version-min=14.2 -o CMakeFiles/complex_app.dir/data_structures/linked_list.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/data_structures/linked_list.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/data_structures/linked_list.c",
+  "output": "CMakeFiles/complex_app.dir/data_structures/linked_list.c.o"
 },
 {
-  "directory": "C:/Users/chenmin/ai-dt/test_projects/complex_c_project/build",
-  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\gcc.exe -DTEST_MODE_FULL @CMakeFiles/complex_app.dir/includes_C.rsp  -g -O0 -Wall -Wextra -DTEST_MODE_FULL -g -std=gnu11 -o CMakeFiles\\complex_app.dir\\data_structures\\hash_table.c.obj -c C:\\Users\\chenmin\\ai-dt\\test_projects\\complex_c_project\\data_structures\\hash_table.c",
-  "file": "C:/Users/chenmin/ai-dt/test_projects/complex_c_project/data_structures/hash_table.c",
-  "output": "CMakeFiles/complex_app.dir/data_structures/hash_table.c.obj"
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/data_structures -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/utils  -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -mmacosx-version-min=14.2 -o CMakeFiles/complex_app.dir/data_structures/hash_table.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/data_structures/hash_table.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/data_structures/hash_table.c",
+  "output": "CMakeFiles/complex_app.dir/data_structures/hash_table.c.o"
 },
 {
-  "directory": "C:/Users/chenmin/ai-dt/test_projects/complex_c_project/build",
-  "command": "C:\\ProgramData\\mingw64\\mingw64\\bin\\gcc.exe -DTEST_MODE_FULL @CMakeFiles/complex_app.dir/includes_C.rsp  -g -O0 -Wall -Wextra -DTEST_MODE_FULL -g -std=gnu11 -o CMakeFiles\\complex_app.dir\\utils\\memory_pool.c.obj -c C:\\Users\\chenmin\\ai-dt\\test_projects\\complex_c_project\\utils\\memory_pool.c",
-  "file": "C:/Users/chenmin/ai-dt/test_projects/complex_c_project/utils/memory_pool.c",
-  "output": "CMakeFiles/complex_app.dir/utils/memory_pool.c.obj"
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/data_structures -I/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/utils  -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -mmacosx-version-min=14.2 -o CMakeFiles/complex_app.dir/utils/memory_pool.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/utils/memory_pool.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/complex_c_project/utils/memory_pool.c",
+  "output": "CMakeFiles/complex_app.dir/utils/memory_pool.c.o"
 }
 ]

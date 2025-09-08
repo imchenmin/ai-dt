@@ -42,8 +42,8 @@ projects:
     description: "Complex C project with data structures, algorithms and memory utilities"
     
     # Use DeepSeek API for this project
-    llm_provider: "dify_web"
-    model: "dify_web_model" # DeepSeek coder model
+    llm_provider: "deepseek"
+    model: "deepseek-chat" # DeepSeek coder model
     
     # Custom output directory for this project
     output_dir: "./experiment/generated_tests_complex_c"

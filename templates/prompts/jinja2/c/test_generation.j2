@@ -85,15 +85,22 @@
 - Focus on pointer and memory assertions for C
 
 **CODE_STRUCTURE_TEMPLATE**:
-{% if test_class_structure -%}
-{{test_class_structure}}
+{% if existing_fixture_code -%}
+**EXISTING_FIXTURE**:
+```cpp
+{{existing_fixture_code}}
+```
 {% else -%}
 ```cpp
 extern "C" {
     #include "{{filename}}.h"
 }
 
+{% if suite_name -%}
+class {{suite_name}} : public ::testing::Test {
+{% else -%}
 class {{filename}}_test : public ::testing::Test {
+{% endif -%}
 protected:
     void SetUp() override {
         // Initialize globals, allocate memory
@@ -103,10 +110,14 @@ protected:
     }
 };
 ```
-{% endif %}
+{% endif -%}
 
 **NAMING_CONVENTIONS**:
+{% if suite_name -%}
+- Test class: `{{suite_name}}`
+{% else -%}
 - Test class: `{{filename}}_test`
+{% endif -%}
 - Test methods: `{{target_function_name}}_when_condition_should_result`
 - Variables: descriptive_names_with_underscores
 
