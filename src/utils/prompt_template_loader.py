@@ -59,11 +59,32 @@ class PromptTemplateLoader:
         if not JINJA2_AVAILABLE:
             raise ImportError("Jinja2 is required for template rendering but not installed")
         
+        # Default rendering options
+        rendering_cfg = {
+            'trim_blocks': True,
+            'lstrip_blocks': True,
+            'keep_trailing_newline': True,
+        }
+
+        # Merge rendering options from loaded config if available
+        try:
+            if isinstance(self._config, dict):
+                cfg_render = self._config.get('rendering', {})
+                if isinstance(cfg_render, dict):
+                    rendering_cfg.update({
+                        'trim_blocks': bool(cfg_render.get('trim_blocks', rendering_cfg['trim_blocks'])),
+                        'lstrip_blocks': bool(cfg_render.get('lstrip_blocks', rendering_cfg['lstrip_blocks'])),
+                        'keep_trailing_newline': bool(cfg_render.get('keep_trailing_newline', rendering_cfg['keep_trailing_newline'])),
+                    })
+        except Exception:
+            # Fall back silently to defaults
+            pass
+
         self.jinja_env = Environment(
             loader=FileSystemLoader(str(self.jinja2_dir)),
-            trim_blocks=True,
-            lstrip_blocks=True,
-            keep_trailing_newline=True
+            trim_blocks=rendering_cfg['trim_blocks'],
+            lstrip_blocks=rendering_cfg['lstrip_blocks'],
+            keep_trailing_newline=rendering_cfg['keep_trailing_newline']
         )
     
     def _load_template_config(self, config_path: str = None):
@@ -106,19 +127,36 @@ class PromptTemplateLoader:
             }
     
     def _load_system_prompts(self):
-        """Load system prompts from JSON file"""
+        """Load system prompts from configuration or JSON file"""
+        # 1) Prefer configuration file (template_config.yaml)
+        if isinstance(self._config, dict) and 'system_prompts' in self._config:
+            try:
+                cfg_prompts = self._config.get('system_prompts') or {}
+                if isinstance(cfg_prompts, dict) and cfg_prompts:
+                    self._system_prompts = cfg_prompts
+                    return
+            except Exception:
+                # If config reading fails, continue to JSON fallback
+                pass
+
+        # 2) Fallback to JSON file colocated with templates
         system_prompts_file = self.templates_dir / "system_prompts.json"
         if system_prompts_file.exists():
-            with open(system_prompts_file, 'r', encoding='utf-8') as f:
-                self._system_prompts = json.load(f)
-        else:
-            # Fallback to default prompts
-            self._system_prompts = {
-                'c': "你是一个专业的C语言单元测试工程师，专门生成Google Test + MockCpp测试用例。",
-                'c++': "你是一个专业的C++单元测试工程师，专门生成Google Test + MockCpp测试用例。",
-                'java': "你是一个专业的Java单元测试工程师，专门生成JUnit 5 + Mockito测试用例。",
-                'default': "你是一个专业的单元测试工程师，专门生成高质量的单元测试用例。"
-            }
+            try:
+                with open(system_prompts_file, 'r', encoding='utf-8') as f:
+                    self._system_prompts = json.load(f)
+                    return
+            except Exception:
+                # Continue to hardcoded default
+                pass
+
+        # 3) Final fallback to hardcoded defaults to keep backward compatibility
+        self._system_prompts = {
+            'c': "你是一个专业的C语言单元测试工程师，专门生成Google Test + MockCpp测试用例。",
+            'c++': "你是一个专业的C++单元测试工程师，专门生成Google Test + MockCpp测试用例。",
+            'java': "你是一个专业的Java单元测试工程师，专门生成JUnit 5 + Mockito测试用例。",
+            'default': "你是一个专业的单元测试工程师，专门生成高质量的单元测试用例。"
+        }
     
     def get_system_prompt(self, language: str) -> str:
         """Get system prompt for specified language

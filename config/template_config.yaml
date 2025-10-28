@@ -48,3 +48,10 @@ validation:
     - language
     - dependencies
     - existing_tests
+
+# System prompts configuration (moved from code to config)
+system_prompts:
+  c: "你是一个专业的C语言单元测试工程师，专门生成Google Test + MockCpp测试用例。"
+  c++: "你是一个专业的C++单元测试工程师，专门生成Google Test + MockCpp测试用例。"
+  java: "你是一个专业的Java单元测试工程师，专门生成JUnit 5 + Mockito测试用例。"
+  default: "你是一个专业的单元测试工程师，专门生成高质量的单元测试用例。"
