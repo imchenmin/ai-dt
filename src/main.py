@@ -16,6 +16,7 @@ load_dotenv()
 from src.test_generation.service import TestGenerationService
 from src.utils.config_manager import config_manager
 from src.utils.logging_utils import get_logger
+from src.api.server import APIServer
 
 # Setup basic logging initially
 logging.basicConfig(level=logging.INFO)
@@ -113,6 +114,14 @@ def generate_tests_single_file(project_path: str, file_path: str, output_dir: st
     service.print_results(results, project_config)
 
 
+def start_api_server(host: str = "0.0.0.0", port: int = 8000, 
+                     provider: str = "openai", reload: bool = False):
+    """Start the API server"""
+    logger.info(f"Starting API server with provider: {provider}")
+    server = APIServer(host=host, port=port, default_provider=provider)
+    server.run(reload=reload)
+
+
 def main():
     parser = argparse.ArgumentParser(description="AI-Driven C/C++ Test Generator")
     
@@ -126,6 +135,8 @@ def main():
                           help="List available projects from configuration")
     mode_group.add_argument("--single-file", metavar="FILE_PATH",
                           help="Single file mode: analyze only the specified file")
+    mode_group.add_argument("--api-server", action="store_true",
+                          help="Start API server mode: expose LLM client as OpenAI-compatible API")
     
     # Simple mode arguments
     parser.add_argument("-p", "--project", help="Project root directory (simple mode)")
@@ -145,6 +156,16 @@ def main():
                       help="Execution profile (quick, comprehensive, custom)")
     parser.add_argument("--prompt-only", action="store_true",
                         help="Only generate prompts and skip LLM requests.")
+    
+    # API server arguments
+    parser.add_argument("--host", default="0.0.0.0",
+                      help="API server host (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=8000,
+                      help="API server port (default: 8000)")
+    parser.add_argument("--provider", default="openai",
+                      help="Default LLM provider for API server (default: openai)")
+    parser.add_argument("--reload", action="store_true",
+                      help="Enable auto-reload for development")
     
     args = parser.parse_args()
     
@@ -214,6 +235,16 @@ def main():
                 output_dir=args.output,
                 compile_commands=args.compile_commands,
                 prompt_only=args.prompt_only
+            )
+            return True
+            
+        elif args.api_server:
+            # API server mode
+            start_api_server(
+                host=args.host,
+                port=args.port,
+                provider=args.provider,
+                reload=args.reload
             )
             return True
             
