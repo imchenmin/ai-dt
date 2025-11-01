@@ -40,13 +40,26 @@ projects:
     comp_db: "test_projects/complex_c_project/compile_commands.json"
     unit_test_directory_path: "test_projects/complex_c_project/tests" # New optional path
     description: "Complex C project with data structures, algorithms and memory utilities"
-    
+
     # Use DeepSeek API for this project
     llm_provider: "deepseek"
     model: "deepseek-chat" # DeepSeek coder model
-    
+
     # Custom output directory for this project
     output_dir: "./experiment/generated_tests_complex_c"
+
+  # Large C project with 100+ functions for testing scalability
+  large_project:
+    path: "test_projects/large_project"
+    comp_db: "test_projects/large_project/compile_commands.json"
+    description: "Large C project with 100+ functions across multiple modules"
+
+    # Use DeepSeek API for this project
+    llm_provider: "deepseek"
+    model: "deepseek-chat" # DeepSeek coder model
+
+    # Custom output directory for this project
+    output_dir: "./experiment/generated_tests_large"
     filter:
       skip_std_lib: true
       skip_compiler_builtins: true
@@ -122,6 +135,36 @@ test_templates:
     teardown: |
       // Test teardown code
 
+# Streaming architecture configuration
+streaming:
+  # Enable streaming architecture for improved performance
+  enabled: true  # Enable streaming for complex_c_project analysis
+
+  # Streaming pipeline configuration
+  pipeline:
+    max_queue_size: 100
+    max_concurrent_files: 3
+    max_concurrent_functions: 5
+    max_concurrent_llm_calls: 3
+    timeout_seconds: 300
+    retry_attempts: 3
+    enable_prioritization: true
+    enable_metrics: true
+
+  # Performance tuning
+  performance:
+    first_result_timeout: 60  # Maximum time to wait for first result
+    progress_report_interval: 5  # Report progress every N seconds
+    batch_size: 10  # Process functions in batches
+    memory_limit_mb: 1024  # Maximum memory usage limit
+
+  # Error handling
+  error_handling:
+    continue_on_error: true  # Continue processing individual function errors
+    max_error_rate: 0.5  # Stop if error rate exceeds this percentage
+    retry_delay: 1.0  # Initial retry delay in seconds
+    backoff_factor: 2.0  # Exponential backoff factor
+
 # Execution profiles
 profiles:
   quick:
@@ -130,24 +173,39 @@ profiles:
     test_cases_per_function: 3
     max_workers: 1  # Sequential processing for quick runs
     timeout: 300  # 5 minutes
-    
+
   comprehensive:
     description: "Comprehensive test generation with full coverage"
     max_functions: 20
     test_cases_per_function: 10
     max_workers: 3  # Concurrent processing for comprehensive runs
     timeout: 1800  # 30 minutes
-    
+
   custom:
     description: "Custom configuration for specific needs"
     max_functions: null  # No limit
     test_cases_per_function: null  # Use function-specific settings
     max_workers: 5  # Higher concurrency for custom runs
     timeout: 3600  # 60 minutes
-    
+
   dify:
     description: "Dify API profile with extended timeouts"
     max_functions: 5  # Limit for Dify testing
     test_cases_per_function: 5
     max_workers: 1  # Sequential for Dify stability
     timeout: 7200  # 2 hours for Dify API calls
+
+  streaming:
+    description: "Streaming architecture profile for large projects"
+    use_streaming: true  # Enable streaming architecture
+    max_functions: null  # No limit for streaming
+    max_workers: 1  # Streaming uses its own concurrency control
+    timeout: 7200  # 2 hours for large projects
+
+    # Override streaming settings for this profile
+    streaming:
+      pipeline:
+        max_concurrent_files: 5
+        max_concurrent_functions: 10
+        max_concurrent_llm_calls: 5
+        timeout_seconds: 600

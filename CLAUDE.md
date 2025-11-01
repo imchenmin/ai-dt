@@ -209,3 +209,4 @@ selective_project:
 - **Dynamic Concurrency**: Adaptive worker count based on system resources and API rate limits
 
 - 每一次完成整个大的工作量并测试完成后，将工作日志写到 @docs/work_logs/ 中
+- 请记住每次都将你的方案保存到 doc文档中，以当前时间戳和标题命名
