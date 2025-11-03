@@ -55,6 +55,17 @@ python -m src.main --list-projects
 - `python -m src.main` - Unified test generation interface
 - `python src/main.py` - Alternative execution (requires PYTHONPATH=.)
 
+### Streaming Mode Commands
+
+- `python -m src.main --streaming -p test_projects/c` - Streaming test generation
+- `python -m src.main --streaming -p test_projects/c --progress` - With progress reporting
+- `python -m src.main --streaming -p test_projects/c --max-concurrent 5` - Custom concurrency
+
+### Comparison Mode Commands
+
+- `python -m src.main --compare -p test_projects/c` - Compare architectures
+- `python -m src.main --compare -p test_projects/c -o ./output` - Custom output directory
+
 ## Key Constraints
 
 - **Model Limitations**: 16K context window, 20K token maximum
@@ -185,6 +196,39 @@ selective_project:
 - **libclang setup**: Use unified configuration approach
 - **API timeouts**: Implement batch processing with delays
 - **Function analysis**: Maintain consistent access patterns
+- **Dify Web认证**: 复制config/sample_dify.curl.example为自定义文件并填入认证信息
+
+## Streaming Architecture
+
+### Overview
+The streaming architecture provides enhanced performance for large-scale test generation through:
+- **Pipeline Processing**: Multi-stage pipeline with file discovery, function processing, LLM processing, and result collection
+- **Concurrent Execution**: Async/await based concurrent processing with configurable concurrency limits
+- **Real-time Progress**: Live progress reporting and performance metrics
+- **Backpressure Control**: Queue-based flow control to prevent memory overload
+- **Error Isolation**: Individual function failures don't affect other functions
+
+### Key Components
+- `StreamingTestGenerationService`: High-level service interface
+- `StreamingPipelineOrchestrator`: Pipeline coordination and flow control
+- `StreamProcessor` implementations: Individual pipeline stages
+- `StreamPacket`: Immutable data packets flowing through pipeline
+- `StreamObserver`: Monitoring and metrics collection
+
+### Configuration
+```yaml
+streaming:
+  enabled: true
+  pipeline:
+    max_queue_size: 100
+    max_concurrent_files: 3
+    max_concurrent_functions: 5
+    max_concurrent_llm_calls: 3
+    timeout_seconds: 300
+    retry_attempts: 3
+    enable_prioritization: true
+    enable_metrics: true
+```
 
 ## Recent Improvements
 
@@ -198,9 +242,13 @@ selective_project:
 - **Batch Processing Optimization**: Implemented concurrent processing with configurable worker counts and immediate prompt saving
 - **Concurrent Processing**: Support for parallel LLM requests with ThreadPoolExecutor (1, 3, or 5 workers)
 - **Selective Parsing**: Added support for folder/file-specific compilation database parsing to handle large projects efficiently
+- **Streaming Architecture**: Complete implementation of pipeline-based streaming processing for improved performance and scalability
+- **Modular Code Organization**: Separated mode handlers into dedicated modules for better maintainability
 
 ### 🚧 Pending Enhancements
 - **Enhanced Error Handling**: Better retry mechanisms and error recovery for concurrent operations
+- **Circuit Breaker Pattern**: Implement circuit breaker for LLM API rate limiting
+- **Backpressure Control**: Enhanced memory management for large projects
 - **Log Analysis**: Automated log parsing and performance reporting for batch processing
 - **Template Optimization**: Further refinement of prompt templates based on generation results
 - **Function Filtering UI**: Interactive function selection interface

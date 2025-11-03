@@ -1,0 +1,56 @@
+[
+{
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/large_project  -Wall -Wextra -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -o CMakeFiles/large_project.dir/algorithms/sorting.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/large_project/algorithms/sorting.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/algorithms/sorting.c",
+  "output": "CMakeFiles/large_project.dir/algorithms/sorting.c.o"
+},
+{
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/large_project  -Wall -Wextra -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -o CMakeFiles/large_project.dir/converters/type_converters.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/large_project/converters/type_converters.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/converters/type_converters.c",
+  "output": "CMakeFiles/large_project.dir/converters/type_converters.c.o"
+},
+{
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/large_project  -Wall -Wextra -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -o CMakeFiles/large_project.dir/data_structures/structures.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/large_project/data_structures/structures.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/data_structures/structures.c",
+  "output": "CMakeFiles/large_project.dir/data_structures/structures.c.o"
+},
+{
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/large_project  -Wall -Wextra -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -o CMakeFiles/large_project.dir/graphics/geometry.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/large_project/graphics/geometry.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/graphics/geometry.c",
+  "output": "CMakeFiles/large_project.dir/graphics/geometry.c.o"
+},
+{
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/large_project  -Wall -Wextra -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -o CMakeFiles/large_project.dir/main.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/large_project/main.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/main.c",
+  "output": "CMakeFiles/large_project.dir/main.c.o"
+},
+{
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/large_project  -Wall -Wextra -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -o CMakeFiles/large_project.dir/math_utils/math_operations.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/large_project/math_utils/math_operations.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/math_utils/math_operations.c",
+  "output": "CMakeFiles/large_project.dir/math_utils/math_operations.c.o"
+},
+{
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/large_project  -Wall -Wextra -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -o CMakeFiles/large_project.dir/parsers/data_parser.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/large_project/parsers/data_parser.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/parsers/data_parser.c",
+  "output": "CMakeFiles/large_project.dir/parsers/data_parser.c.o"
+},
+{
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/large_project  -Wall -Wextra -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -o CMakeFiles/large_project.dir/string_utils/string_operations.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/large_project/string_utils/string_operations.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/string_utils/string_operations.c",
+  "output": "CMakeFiles/large_project.dir/string_utils/string_operations.c.o"
+},
+{
+  "directory": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/build",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/cc  -I/Users/chenmin/Develop/ai-dt/test_projects/large_project  -Wall -Wextra -O2 -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX26.0.sdk -o CMakeFiles/large_project.dir/validators/input_validators.c.o -c /Users/chenmin/Develop/ai-dt/test_projects/large_project/validators/input_validators.c",
+  "file": "/Users/chenmin/Develop/ai-dt/test_projects/large_project/validators/input_validators.c",
+  "output": "CMakeFiles/large_project.dir/validators/input_validators.c.o"
+}
+]

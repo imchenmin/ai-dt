@@ -1,0 +1,14 @@
+curl 'https://udify.app/api/chat-messages' \
+  -H 'accept: */*' \
+  -H 'accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6' \
+  -H 'authorization: Bearer YOUR_AUTH_TOKEN_HERE' \
+  -H 'cache-control: no-cache' \
+  -H 'content-type: application/json' \
+  -H 'origin: https://udify.app' \
+  -H 'pragma: no-cache' \
+  -H 'priority: u=1, i' \
+  -H 'referer: https://udify.app/chat/YOUR_APP_CODE_HERE' \
+  -H 'x-app-code: YOUR_APP_CODE_HERE' \
+  -H 'x-app-passport: YOUR_AUTH_TOKEN_HERE' \
+  -H 'x-csrf-token;' \
+  --data-raw '{"response_mode":"streaming","conversation_id":"","files":[],"query":"测试","inputs":{},"parent_message_id":null}'

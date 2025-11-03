@@ -205,8 +205,9 @@ class StreamingPipelineOrchestrator:
             await self.file_discovery_queue.put(initial_packet)
 
             # Monitor and yield results
-            async for result_packet in self.monitor_pipeline_results():
-                yield result_packet
+            async for result_packet in self._monitor_pipeline_results():
+                if result_packet:
+                    yield result_packet
 
         except Exception as e:
             self.logger.error(f"Pipeline execution failed: {e}")
@@ -336,7 +337,7 @@ class StreamingPipelineOrchestrator:
         except asyncio.CancelledError:
             self.logger.info("Result collection worker cancelled")
 
-    async def monitor_pipeline_results(self) -> AsyncIterator[StreamPacket]:
+    async def _monitor_pipeline_results(self) -> AsyncIterator[StreamPacket]:
         """Monitor pipeline and yield final results"""
         last_activity = time.time()
         idle_timeout = 30.0  # 30 seconds of inactivity considered complete
@@ -350,20 +351,38 @@ class StreamingPipelineOrchestrator:
                 if (time_since_last_activity > idle_timeout and
                     await self._all_queues_empty()):
                     self.logger.info("Pipeline completed - all queues empty and idle timeout reached")
+                    # Send completion packet
+                    completion_packet = StreamPacket(
+                        stage=StreamStage.RESULT_COLLECTION,
+                        data={"status": "completed", "total_processed": self.statistics.packets_processed},
+                        timestamp=time.time(),
+                        packet_id="pipeline-complete"
+                    )
+                    yield completion_packet
                     break
 
-                # Yield any completed results from result collector
-                # In a real implementation, this would interface with the result collector
-                await asyncio.sleep(0.1)
+                # Check for results in result collection queue
+                try:
+                    # Try to get a result without blocking
+                    result_packet = await asyncio.wait_for(
+                        self.result_collection_queue.get(),
+                        timeout=0.1
+                    )
+                    yield result_packet
+                except asyncio.TimeoutError:
+                    # No results available, continue monitoring
+                    pass
 
             except Exception as e:
                 self.logger.error(f"Error in pipeline monitoring: {e}")
+                error_packet = StreamPacket(
+                    stage=StreamStage.RESULT_COLLECTION,
+                    data={"error": str(e)},
+                    timestamp=time.time(),
+                    packet_id="pipeline-error"
+                )
+                yield error_packet
                 break
-
-    async def _monitor_pipeline_results(self) -> AsyncIterator[StreamPacket]:
-        """Internal wrapper for pipeline monitoring"""
-        async for packet in self.monitor_pipeline_results():
-            yield packet
 
     async def _all_queues_empty(self) -> bool:
         """Check if all queues are empty"""
