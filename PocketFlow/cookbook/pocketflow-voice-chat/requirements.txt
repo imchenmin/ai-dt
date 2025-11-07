@@ -1,6 +1,0 @@
-openai
-pocketflow
-numpy
-sounddevice
-scipy
-soundfile 

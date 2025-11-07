@@ -1,2 +1,0 @@
-pocketflow>=0.0.1
-anthropic>=0.20.0 # Or a recent version
