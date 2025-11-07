@@ -20,6 +20,10 @@ env/
 *.swo
 *~
 
+# Qoder IDE files
+.qoder/
+.qodo/
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -67,30 +71,9 @@ experiment/generated_tests/*/
 
 # Jupyter notebooks
 .ipynb_checkpoints/
-.history/
-.history/docs/work_logs/20250831_qodo对整体项目进行判断_20250831095149.md
-.history/docs/work_logs/20250831_qodo对整体项目进行判断_20250831095155.md
-.history/docs/work_logs/20250831_qodo对整体项目进行判断_20250831095157.md
-.history/tests/integration/test_end_to_end_pipeline_20250831100643.py
-.history/tests/integration/test_end_to_end_pipeline_20250831100723.py
-.history/tests/integration/test_end_to_end_pipeline_20250831100827.py
-.history/tests/unit/test_components_20250831095306.py
-.history/tests/unit/test_components_20250831095414.py
-.history/tests/unit/test_config_manager_20250831095509.py
-.history/tests/unit/test_config_manager_20250831095536.py
-.history/tests/unit/test_config_manager_20250831095555.py
-.history/tests/unit/test_llm_integration_20250831100245.py
-.history/tests/unit/test_llm_integration_20250831100314.py
-.history/tests/unit/test_llm_integration_20250831100331.py
-.history/tests/unit/test_models_20250831095159.py
-.history/tests/unit/test_models_20250831095241.py
-.history/tests/unit/test_new_service_20250831095920.py
-.history/tests/unit/test_new_service_20250831095941.py
-.history/tests/unit/test_new_service_20250831100009.py
-.history/tests/unit/test_new_service_20250831100034.py
-.history/tests/unit/test_orchestrator_20250831095736.py
-.history/tests/unit/test_orchestrator_20250831095812.py
-.history/tests/unit/test_strategies_20250831095410.py
-.history/tests/unit/test_test_generation_service_20250831100957.py
-.history/tests/unit/test_test_generation_service_20250831101015.py
-.history/tests/unit/test_test_generation_service_20250831101037.py
+
+# Claude settings
+.claude/settings.local.json
+
+# BFG tool
+bfg.jar
