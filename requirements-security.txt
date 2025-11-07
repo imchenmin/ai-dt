@@ -1,0 +1,26 @@
+# Security testing dependencies for AI-DT
+
+# Core testing framework
+pytest>=7.4.3
+pytest-cov>=4.1.0
+pytest-mock>=3.11.1
+pytest-xdist>=3.3.1
+
+# System monitoring for DoS testing
+psutil>=5.9.5
+
+# Security scanning tools
+bandit>=1.7.5  # Python security linter
+safety>=2.3.5  # Dependency vulnerability scanner
+
+# Static analysis
+pylint>=2.17.5
+flake8>=6.0.0
+
+# fuzz testing
+afl>=0.7.5
+hypothesis>=6.82.6
+
+# Web security testing (if API is exposed)
+requests>=2.31.0
+urllib3>=2.0.4

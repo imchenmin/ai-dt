@@ -298,21 +298,21 @@ class TestConfigManager:
         finally:
             os.unlink(config_path)
     
-    @patch.dict(os.environ, {'DEEPSEEK_API_KEY': 'test_key'})
+    @patch.dict(os.environ, {'DEEPSEEK_API_KEY': 'test_key'}, clear=True)
     def test_is_provider_available_true(self):
         """Test provider availability check when API key is set"""
         test_config = self.create_test_config()
-        
+
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
             yaml.safe_dump(test_config, f)
             config_path = f.name
-        
+
         try:
             manager = ConfigManager(config_path)
-            
+
             assert manager.is_provider_available('deepseek') is True
             assert manager.is_provider_available('openai') is False  # No OPENAI_API_KEY set
-            
+
         finally:
             os.unlink(config_path)
     

@@ -41,13 +41,24 @@ class APIServer:
             version="1.0.0"
         )
         
-        # Add CORS middleware
+        # Add CORS middleware with secure configuration
+        # Load allowed origins from environment or use secure defaults
+        import os
+        allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",")
+        allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
+
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=allowed_origins,
             allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
+            allow_methods=["GET", "POST", "PUT", "DELETE"],  # Explicitly allowed methods
+            allow_headers=[
+                "Content-Type",
+                "Authorization",
+                "X-Requested-With",
+                "Accept",
+                "Origin"
+            ],  # Explicitly allowed headers
         )
         
         # LLM client cache
