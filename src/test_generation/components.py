@@ -2,7 +2,8 @@
 Core components for test generation with single responsibilities
 """
 
-from typing import Dict, Any, List, Optional
+import time
+from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
 
 from .models import GenerationTask, GenerationResult, AggregatedResult
@@ -77,10 +78,87 @@ class PromptGenerator:
 
 class CoreTestGenerator:
     """Core component responsible for generating test code using LLM"""
-    
+
     def __init__(self, llm_client: LLMClient):
         self.llm_client = llm_client
+
+    def validate_test_code(self, test_code: str) -> tuple[bool, str]:
+        """
+        Validate generated test code for common issues.
+
+        Args:
+            test_code: Generated test code
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not test_code:
+            return False, "Empty test code"
+
+        # Check for markdown markers that might have been missed
+        if '```' in test_code:
+            return False, "Test code contains markdown markers"
+
+        # Check for required elements based on language
+        required_elements = ['#include', 'TEST_', 'EXPECT_']
+        missing_elements = [elem for elem in required_elements if elem not in test_code]
+
+        if missing_elements:
+            return False, f"Missing required elements: {', '.join(missing_elements)}"
+
+        # Check for basic C++ test structure if it's a C++ test
+        if '#include <gtest/gtest.h>' in test_code or '#include "gtest/gtest.h"' in test_code:
+            # Check for proper test class structure
+            if 'class ' not in test_code and 'TEST(' not in test_code:
+                return False, "Missing test class or test function structure"
+
+        # Check for mock usage if mockcpp is included
+        if 'mockcpp' in test_code.lower():
+            if 'MOCKER' not in test_code and 'MOCKCPP' not in test_code:
+                logger.warning("MockCpp included but no mock setup found")
+
+        return True, ""
     
+    def generate_test_with_retry(self, task: GenerationTask, prompt: str, max_retries: int = 3) -> GenerationResult:
+        """Generate test code with retry mechanism"""
+        last_error = None
+
+        for attempt in range(max_retries):
+            try:
+                result = self.generate_test(task, prompt)
+
+                # If successful and validation passes, return
+                if result.success:
+                    return result
+
+                # If generation failed, log and retry
+                last_error = result.error or "Unknown error"
+                logger.warning(f"Generation failed for {task.function_name}, attempt {attempt + 1}/{max_retries}: {last_error}")
+
+                # Don't retry immediately for certain errors
+                if "quota" in str(last_error).lower() or "rate limit" in str(last_error).lower():
+                    logger.error(f"Rate limit or quota error for {task.function_name}, not retrying")
+                    break
+
+            except Exception as e:
+                last_error = str(e)
+                logger.error(f"Generation error for {task.function_name}, attempt {attempt + 1}/{max_retries}: {e}")
+
+            # Wait before retry (exponential backoff)
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # 1, 2, 4 seconds
+                logger.info(f"Waiting {wait_time} seconds before retry...")
+                time.sleep(wait_time)
+
+        # All retries failed
+        logger.error(f"Failed to generate test for {task.function_name} after {max_retries} attempts")
+        return GenerationResult(
+            task=task,
+            success=False,
+            error=f"Failed after {max_retries} attempts. Last error: {last_error}",
+            prompt=prompt
+        )
+
     def generate_test(self, task: GenerationTask, prompt: str) -> GenerationResult:
         """Generate test code for a single task"""
         try:
@@ -93,24 +171,34 @@ class CoreTestGenerator:
             )
             
             # Create result object
+            test_code = llm_result.get('test_code', '')
+
+            # Validate the generated test code
+            if test_code:
+                is_valid, validation_error = self.validate_test_code(test_code)
+                if not is_valid:
+                    logger.error(f"Generated test validation failed for {task.function_name}: {validation_error}")
+                    # Don't fail completely, but log the issue
+                    logger.warning(f"Proceeding with potentially invalid test code for {task.function_name}")
+
             result = GenerationResult(
                 task=task,
                 success=llm_result['success'],
-                test_code=llm_result.get('test_code', ''),
+                test_code=test_code,
                 prompt=prompt,
                 error=llm_result.get('error'),
                 usage=llm_result.get('usage', {}),
                 model=llm_result.get('model', ''),
                 prompt_length=len(prompt),
-                test_length=len(llm_result.get('test_code', ''))
+                test_length=len(test_code)
             )
-            
+
             if result.success:
                 logger.debug(f"Successfully generated test for {task.function_name}")
                 logger.debug(f"Tokens used: {result.usage}")
             else:
                 logger.error(f"Failed to generate test for {task.function_name}: {result.error}")
-            
+
             return result
             
         except Exception as e:

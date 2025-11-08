@@ -180,10 +180,39 @@ class TestGenerationOrchestrator:
         
         # Execute using strategy
         results = self.execution_strategy.execute(tasks, process_task)
-        
-        logger.info(f"Completed test generation: {len([r for r in results if r.success])} successful, "
-                   f"{len([r for r in results if not r.success])} failed")
-        
+
+        # Generate detailed statistics
+        successful_results = [r for r in results if r.success]
+        failed_results = [r for r in results if not r.success]
+
+        # Log detailed statistics
+        logger.info(f"Completed test generation: {len(successful_results)} successful, "
+                   f"{len(failed_results)} failed")
+
+        # Log failed function names
+        if failed_results:
+            failed_names = [r.task.function_name for r in failed_results]
+            logger.warning(f"Failed to generate tests for: {', '.join(failed_names)}")
+
+            # Group failures by error type
+            error_groups = {}
+            for r in failed_results:
+                error = r.error or "Unknown error"
+                error_key = error[:50]  # First 50 chars
+                if error_key not in error_groups:
+                    error_groups[error_key] = []
+                error_groups[error_key].append(r.task.function_name)
+
+            logger.info("Failure breakdown:")
+            for error, functions in error_groups.items():
+                logger.info(f"  - {error}: {len(functions)} function(s)")
+
+        # Log token usage statistics
+        if successful_results:
+            total_tokens = sum(r.usage.get('total_tokens', 0) for r in successful_results)
+            avg_tokens = total_tokens / len(successful_results) if successful_results else 0
+            logger.info(f"Token usage: Total={total_tokens}, Average per function={avg_tokens:.0f}")
+
         return results
     
     def _post_process_results(self, results: List[GenerationResult]) -> List[GenerationResult]:

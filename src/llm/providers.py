@@ -3,6 +3,7 @@ LLM provider implementations following the provider pattern
 """
 
 import json
+import re
 import requests
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any
@@ -12,6 +13,34 @@ from src.utils.logging_utils import get_logger
 # from src.utils.prompt_templates import PromptTemplates  # Removed to avoid circular import
 
 logger = get_logger(__name__)
+
+
+def clean_markdown_content(content: str) -> str:
+    """
+    Remove markdown code block markers from LLM response.
+
+    Args:
+        content: Raw content from LLM response
+
+    Returns:
+        Cleaned content without markdown markers
+    """
+    if not content:
+        return content
+
+    # Remove opening markdown code block markers (```cpp, ```c, ``` etc)
+    content = re.sub(r'^```[a-zA-Z]*\s*\n?', '', content, flags=re.MULTILINE)
+
+    # Remove closing markdown code block markers
+    content = re.sub(r'\n?```$', '', content)
+
+    # Remove any remaining standalone ``` markers
+    content = re.sub(r'\n?```\s*\n?', '\n', content)
+
+    # Strip leading/trailing whitespace
+    content = content.strip()
+
+    return content
 
 
 class LLMProvider(ABC):
@@ -95,10 +124,13 @@ class OpenAIProvider(LLMProvider):
             content = choices[0].get('message', {}).get('content', '')
             if not content:
                 raise ValueError("Empty content in OpenAI API response")
-            
+
+            # Clean markdown markers from content
+            content = clean_markdown_content(content)
+
             return GenerationResponse(
                 success=True,
-                content=content.strip(),
+                content=content,
                 usage=usage,
                 model=self.model,
                 provider=self.provider_name
@@ -196,10 +228,13 @@ class DeepSeekProvider(LLMProvider):
             content = choices[0].get('message', {}).get('content', '')
             if not content:
                 raise ValueError("Empty content in DeepSeek API response")
-            
+
+            # Clean markdown markers from content
+            content = clean_markdown_content(content)
+
             return GenerationResponse(
                 success=True,
-                content=content.strip(),
+                content=content,
                 usage=usage,
                 model=self.model,
                 provider=self.provider_name
@@ -281,9 +316,12 @@ class DifyProvider(LLMProvider):
                 total_tokens=usage_data.get('total_tokens', 0)
             )
             
+            # Clean markdown markers from content
+            content = clean_markdown_content(response_data['answer'])
+
             return GenerationResponse(
                 success=True,
-                content=response_data['answer'].strip(),
+                content=content,
                 usage=usage,
                 model=response_data.get('model', self.model),
                 provider=self.provider_name
