@@ -6,7 +6,7 @@
 {% endfor %}
 
 3. **MOCKCPP_SYNTAX_RULES**:
-   **LANGUAGE**: {{ target_function.language.display_name }}
+   **LANGUAGE**: {% if target_function.language.display_name is defined %}{{ target_function.language.display_name }}{% elif target_function.language == 1 or target_function.language == 'c' %}C{% elif target_function.language == 2 or target_function.language == 'c++' %}C++{% else %}{{ target_function.language }}{% endif %}
    **MANDATORY_CHAIN_ORDER**: MOCKER(func) -> [.stubs()|.expects()] -> [.with()] -> .will()
    
    **BASIC_PATTERNS**:

@@ -13,36 +13,6 @@ from src.utils.logging_utils import get_logger
 logger = get_logger(__name__)
 
 
-def sanitize_command_args(args: List[str]) -> List[str]:
-    """
-    Sanitize command arguments to prevent injection attacks.
-
-    Args:
-        args: List of command arguments
-
-    Returns:
-        Sanitized list of arguments
-
-    Security:
-        - Validates each argument for dangerous characters
-        - Prevents command injection through malicious input
-    """
-    sanitized = []
-    dangerous_chars = [';', '&', '|', '`', '$', '(', ')', '<', '>', '"', "'"]
-
-    for arg in args:
-        # Check for dangerous characters that could lead to injection
-        if any(char in str(arg) for char in dangerous_chars):
-            logger.error(f"Potentially dangerous argument detected and blocked: {arg}")
-            continue
-
-        # Skip empty arguments
-        if not arg or not str(arg).strip():
-            continue
-
-        sanitized.append(str(arg))
-
-    return sanitized
 
 
 class CompileDBGenerator:
@@ -51,46 +21,7 @@ class CompileDBGenerator:
     def __init__(self, project_root: str):
         self.project_root = Path(project_root)
 
-    def _is_safe_filename(self, filename: str) -> bool:
-        """
-        Check if a filename is safe to use in commands.
-
-        Args:
-            filename: The filename to check
-
-        Returns:
-            True if safe, False otherwise
-
-        Security:
-            - Prevents path traversal attacks
-            - Prevents command injection through filenames
-            - Validates against dangerous patterns
-        """
-        if not filename:
-            return False
-
-        # Check for path traversal attempts
-        if '..' in filename or '/' in filename or '\\' in filename:
-            return False
-
-        # Check for dangerous characters
-        dangerous_chars = [';', '&', '|', '`', '$', '(', ')', '<', '>', '"', "'", '\n', '\r']
-        if any(char in filename for char in dangerous_chars):
-            return False
-
-        # Check if filename starts with a dot (hidden files)
-        if filename.startswith('.'):
-            return False
-
-        # Check length limit
-        if len(filename) > 255:
-            return False
-
-        # Allow only alphanumeric characters, underscores, hyphens, and dots
-        import re
-        pattern = r'^[a-zA-Z0-9_.-]+\.[cC]+$|^[a-zA-Z0-9_.-]+\.(cpp|cc|cxx|h|hpp|hxx)$'
-        return bool(re.match(pattern, filename))
-    
+        
     def generate_with_cmake(self, build_dir: str = "build") -> bool:
         """Generate compile_commands.json using CMake"""
         build_path = self.project_root / build_dir
@@ -148,11 +79,6 @@ class CompileDBGenerator:
             if not source_path.exists():
                 continue
 
-            # Sanitize the source file name to prevent injection
-            if not self._is_safe_filename(source_path.name):
-                logger.error(f"Unsafe filename detected: {source_path.name}")
-                continue
-
             # Determine compiler based on file extension
             if source_path.suffix in ['.c']:
                 compiler = "gcc"
@@ -168,23 +94,20 @@ class CompileDBGenerator:
             if std_flag:
                 command_args.append(std_flag)
 
-            # Sanitize all arguments
-            command_args = sanitize_command_args(command_args)
-
             compile_command = {
                 "directory": str(self.project_root),
                 "command": " ".join(shlex.quote(arg) for arg in command_args),
                 "file": str(source_path.name)
             }
             compile_commands.append(compile_command)
-        
+
         if compile_commands:
             output_path = self.project_root / "compile_commands.json"
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(compile_commands, f, indent=2)
             logger.info(f"Generated simple compile_commands.json with {len(compile_commands)} entries")
             return True
-        
+
         return False
     
     def find_source_files(self) -> List[str]:

@@ -1,7 +1,15 @@
 {# Mock指导部分模板 - 根据语言选择合适的Mock指导 #}
-{% if target_function.language.value in ['c', 'c++'] %}
+{# target_function.language 可能是枚举对象或字符串 #}
+{% if target_function.language is string %}
+    {% set lang_value = target_function.language %}
+{% elif target_function.language.value is defined %}
+    {% set lang_value = target_function.language.value %}
+{% else %}
+    {% set lang_value = target_function.language %}
+{% endif %}
+{% if lang_value in ['c', 'c++'] %}
 {% include 'base/sections/cpp_mock_guidance.j2' %}
-{% elif target_function.language.value == 'java' %}
+{% elif lang_value == 'java' %}
 {% include 'base/sections/java_mock_guidance.j2' %}
 {% else %}
 {# 默认情况：无外部依赖 #}

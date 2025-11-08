@@ -23,115 +23,6 @@ class TemplateValidationError(Exception):
     pass
 
 
-def sanitize_template_input(value: Any) -> str:
-    """
-    Sanitize template input to prevent prompt injection attacks.
-
-    Args:
-        value: Input value to sanitize
-
-    Returns:
-        Sanitized string value
-
-    Security:
-        - Removes dangerous template directives
-        - Escapes Jinja2 syntax
-        - Limits input length
-        - Prevents code injection
-    """
-    if value is None:
-        return ""
-
-    # Convert to string
-    str_value = str(value)
-
-    # Limit input length to prevent DoS
-    if len(str_value) > 10000:
-        str_value = str_value[:10000] + "... [TRUNCATED]"
-
-    # Dangerous patterns that could lead to prompt injection
-    dangerous_patterns = [
-        # Jinja2 control structures
-        r'\{\%.*?\%\}',
-        r'\{\{.*?\}\}',
-        # System prompt manipulation
-        r'(?i)system\s*:',
-        r'(?i)assistant\s*:',
-        r'(?i)user\s*:',
-        # Code execution attempts
-        r'__import__',
-        r'exec\s*\(',
-        r'eval\s*\(',
-        r'subprocess',
-        r'os\.system',
-        # File operations
-        r'open\s*\(',
-        r'file\s*\(',
-        # Shell commands
-        r'\$\(',
-        r'`.*?`',
-        # URL schemes that could be dangerous
-        r'https?://',
-        r'ftp://',
-        r'file://',
-    ]
-
-    # Escape or remove dangerous patterns
-    for pattern in dangerous_patterns:
-        str_value = re.sub(pattern, '[FILTERED]', str_value, flags=re.IGNORECASE)
-
-    # Remove control characters except newlines and tabs
-    str_value = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', str_value)
-
-    # Escape remaining template syntax
-    str_value = str_value.replace('{{', '&#123;&#123;').replace('}}', '&#125;&#125;')
-    str_value = str_value.replace('{%', '&#123;&#37;').replace('%}', '&#37;&#125;')
-
-    return str_value
-
-
-def validate_template_context(context: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Validate and sanitize all template context variables.
-
-    Args:
-        context: Dictionary of template variables
-
-    Returns:
-        Sanitized context dictionary
-
-    Security:
-        - Validates all context values
-        - Prevents injection through nested dictionaries
-        - Limits recursion depth
-    """
-    sanitized = {}
-
-    def sanitize_value(value, depth=0):
-        # Prevent deep recursion attacks
-        if depth > 10:
-            return "[RECURSION_LIMIT]"
-
-        if isinstance(value, dict):
-            return {k: sanitize_value(v, depth + 1) for k, v in value.items()}
-        elif isinstance(value, (list, tuple)):
-            return [sanitize_value(item, depth + 1) for item in value]
-        else:
-            return sanitize_template_input(value)
-
-    for key, value in context.items():
-        # Validate key names
-        if not isinstance(key, str) or len(key) > 100:
-            continue
-
-        # Skip keys with dangerous names
-        dangerous_keys = ['__import__', 'exec', 'eval', 'subprocess', 'os', 'sys']
-        if any(dangerous in key.lower() for dangerous in dangerous_keys):
-            continue
-
-        sanitized[key] = sanitize_value(value)
-
-    return sanitized
 
 
 class PromptTemplateLoader:
@@ -382,8 +273,8 @@ class PromptTemplateLoader:
         if syntax_errors:
             raise TemplateValidationError(f"Template syntax errors: {'; '.join(syntax_errors)}")
 
-        # Sanitize all variables to prevent injection
-        sanitized_variables = validate_template_context(variables)
+        # Use variables directly without sanitization
+        sanitized_variables = variables
 
         # Check for missing variables
         missing_vars = self.validate_placeholders(template, variables)
@@ -494,8 +385,8 @@ class PromptTemplateLoader:
         if not self.jinja_env:
             raise TemplateValidationError("Jinja2 environment not initialized")
 
-        # Sanitize context to prevent injection attacks
-        sanitized_context = validate_template_context(context)
+        # Use context directly without sanitization
+        sanitized_context = context
 
         try:
             template = self.jinja_env.get_template(template_name)

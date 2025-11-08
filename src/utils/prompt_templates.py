@@ -135,22 +135,52 @@ class PromptTemplates:
     @staticmethod
     def _generate_mock_guidance(ctx: PromptContext) -> str:
         """Generate mock guidance by rendering the mock_guidance.j2 template
-        
+
         Args:
             ctx: Prompt context
-            
+
         Returns:
             Rendered mock guidance string or empty string if no guidance needed
         """
         try:
             loader = PromptTemplateLoader()
-            
+
             # Prepare context for mock_guidance template
-            mock_context = {
-                'target_function': ctx.target_function,
-                'dependencies': ctx.dependencies
+            # Convert target_function to dict format for template compatibility
+            target_function_dict = {
+                'name': ctx.target_function.name,
+                'signature': ctx.target_function.signature,
+                'return_type': ctx.target_function.return_type,
+                'parameters': ctx.target_function.parameters,
+                'body': ctx.target_function.body,
+                'location': ctx.target_function.location,
+                'language': ctx.target_function.language.value if hasattr(ctx.target_function.language, 'value') else ctx.target_function.language,
+                'is_static': ctx.target_function.is_static,
+                'access_specifier': ctx.target_function.access_specifier
             }
-            
+
+            # Convert dependencies to dict format
+            dependencies_dict = {
+                'called_functions': [{
+                    'name': func.name,
+                    'declaration': func.declaration,
+                    'is_mockable': func.is_mockable,
+                    'location': func.location
+                } for func in ctx.dependencies.called_functions],
+                'macros': ctx.dependencies.macros,
+                'macro_definitions': [{
+                    'name': macro.name,
+                    'definition': macro.definition
+                } for macro in ctx.dependencies.macro_definitions],
+                'data_structures': ctx.dependencies.data_structures,
+                'dependency_definitions': ctx.dependencies.dependency_definitions
+            }
+
+            mock_context = {
+                'target_function': target_function_dict,
+                'dependencies': dependencies_dict
+            }
+
             # Render the mock_guidance.j2 template
             return loader.render_template('base/sections/mock_guidance.j2', mock_context)
         except Exception as e:

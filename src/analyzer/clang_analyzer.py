@@ -13,121 +13,6 @@ from src.utils.logging_utils import get_logger
 logger = get_logger(__name__)
 
 
-def validate_file_path(file_path: str) -> Optional[Path]:
-    """
-    Validate and canonicalize file path to prevent path traversal attacks.
-
-    Args:
-        file_path: The input file path to validate
-
-    Returns:
-        Path object if valid, None if invalid
-
-    Security:
-        - Resolves all symbolic links and relative paths
-        - Ensures the path is within allowed directories
-        - Validates file extension
-    """
-    try:
-        # Convert to Path object and resolve to absolute path
-        path = Path(file_path).resolve()
-
-        # Define allowed file extensions for C/C++ files
-        allowed_extensions = {'.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hxx', '.c++'}
-
-        # Check file extension
-        if path.suffix.lower() not in allowed_extensions:
-            logger.error(f"Invalid file extension: {path.suffix}")
-            return None
-
-        # Check if file exists
-        if not path.exists():
-            logger.error(f"File not found: {file_path}")
-            return None
-
-        # Check if it's a regular file
-        if not path.is_file():
-            logger.error(f"Path is not a regular file: {file_path}")
-            return None
-
-        # Additional check: ensure we're not accessing sensitive system files
-        # Get the current working directory and parent directories
-        cwd = Path.cwd().resolve()
-
-        # Define restricted paths that should never be accessed
-        restricted_paths = [
-            Path('/etc'),
-            Path('/usr/bin'),
-            Path('/bin'),
-            Path('/sbin'),
-            Path('/var'),
-            Path('/sys'),
-            Path('/proc'),
-            Path('/dev')
-        ]
-
-        # Check if the resolved path is under any restricted directory
-        for restricted in restricted_paths:
-            try:
-                if path.resolve().is_relative_to(restricted):
-                    logger.error(f"Access to restricted directory denied: {path}")
-                    return None
-            except AttributeError:
-                # Python < 3.9 fallback
-                if str(path.resolve()).startswith(str(restricted)):
-                    logger.error(f"Access to restricted directory denied: {path}")
-                    return None
-
-        # On Windows, also check system directories
-        if os.name == 'nt':
-            windows_restricted = [
-                Path('C:\\Windows'),
-                Path('C:\\Program Files'),
-                Path('C:\\Program Files (x86)'),
-                Path('C:\\Users'),
-            ]
-            for restricted in windows_restricted:
-                try:
-                    if path.resolve().is_relative_to(restricted):
-                        logger.error(f"Access to restricted directory denied: {path}")
-                        return None
-                except AttributeError:
-                    if str(path.resolve()).lower().startswith(str(restricted).lower()):
-                        logger.error(f"Access to restricted directory denied: {path}")
-                        return None
-
-        return path
-
-    except Exception as e:
-        logger.error(f"Error validating file path {file_path}: {e}")
-        return None
-
-
-def safe_open_file(file_path: Path, mode: str = 'r', encoding: str = 'utf-8'):
-    """
-    Safely open a file with additional security checks.
-
-    Args:
-        file_path: Validated Path object
-        mode: File open mode
-        encoding: File encoding
-
-    Returns:
-        File handle
-
-    Raises:
-        ValueError: If security checks fail
-        IOError: If file cannot be opened
-    """
-    # Additional size check to prevent processing extremely large files
-    file_size = file_path.stat().st_size
-    max_file_size = 50 * 1024 * 1024  # 50MB limit
-
-    if file_size > max_file_size:
-        raise ValueError(f"File too large: {file_size} bytes (max: {max_file_size})")
-
-    # Open file with error handling
-    return open(file_path, mode, encoding=encoding, errors='ignore')
 
 
 class ClangAnalyzer:
@@ -139,11 +24,6 @@ class ClangAnalyzer:
     
     def analyze_file(self, file_path: str, compile_args: List[str]) -> List[Dict[str, Any]]:
         """Analyze a C/C++ file and extract function information"""
-        # Validate file path to prevent path traversal attacks
-        path = validate_file_path(file_path)
-        if path is None:
-            return []
-        
         logger.info(f"Analyzing {file_path} with args: {compile_args}")
         
         index = clang.cindex.Index.create()
@@ -259,13 +139,8 @@ class ClangAnalyzer:
             # Read the source file and extract the function body
             source_file = start.file
             if source_file:
-                # Validate the file path before opening
-                file_path = validate_file_path(source_file.name)
-                if file_path is None:
-                    logger.error(f"Invalid file path in function body extraction: {source_file.name}")
-                    return ""
-
-                with safe_open_file(file_path) as f:
+                file_path = Path(source_file.name)
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                     lines = f.readlines()
                     # Extract lines from start to end (1-based to 0-based conversion)
                     body_lines = lines[start.line-1:end.line]
@@ -320,12 +195,8 @@ class ClangAnalyzer:
             if not node_cursor or not node_cursor.extent.start.file:
                 return ""
             try:
-                # Validate file path before opening
-                file_path = validate_file_path(node_cursor.extent.start.file.name)
-                if file_path is None:
-                    return ""
-
-                with safe_open_file(file_path) as f:
+                file_path = Path(node_cursor.extent.start.file.name)
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                     lines = f.readlines()
                     body_lines = lines[node_cursor.extent.start.line-1 : node_cursor.extent.end.line]
                     return ''.join(body_lines).strip()
