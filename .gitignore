@@ -77,3 +77,4 @@ experiment/generated_tests/*/
 
 # BFG tool
 bfg.jar
+experiment/*

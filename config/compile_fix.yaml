@@ -1,0 +1,34 @@
+debug_tool:
+  compile_fix:
+    # IO paths
+    input_text: "experiment/deepseek_generated_tests/3_pure_tests/combined.txt"
+    target_file: "test_projects/fix_bugs_project/tests/generated_suite.cpp"
+    project_root: "test_projects/fix_bugs_project"
+    build_dir: "test_projects/fix_bugs_project/build"
+    audit_dir: "experiment/compile_fix_logs"
+
+    # Build and run
+    error_prefix: "generated_suite.cpp"
+    cmake_target: "generated_suite"
+    run_tests: true
+    max_iterations: 10
+
+    # Command customization (optional)
+    # Override executables or pass custom arguments if using wrappers or variants
+    cmake_command: null  # e.g., "/usr/local/bin/cmake" or a wrapper script
+    cmake_configure_args: null  # e.g., ["-S", "test_projects/fix_bugs_project", "-B", "test_projects/fix_bugs_project/build"]
+    cmake_build_args: null      # e.g., ["--build", "test_projects/fix_bugs_project/build", "--target", "generated_suite"]
+
+    ctest_command: null         # e.g., "/usr/local/bin/ctest" or a wrapper script
+    ctest_args: ["--output-on-failure"]
+    ctest_regex: null           # include filter: passed to ctest '-R'
+    ctest_exclude_regex: null   # exclude filter: passed to ctest '-E'
+    ctest_workdir: null         # working directory for ctest (defaults to build_dir)
+
+    # Blacklist sources
+    blacklist_file: null  # optional text file path
+    blacklist:
+      - "MOCKER("
+      - "mock_variadic"
+      - "ON_CALL("
+      - "EXPECT_CALL("

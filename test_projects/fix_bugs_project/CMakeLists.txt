@@ -26,3 +26,8 @@ target_link_libraries(test_hash_table hash_table GTest::gtest GTest::gtest_main)
 
 # 添加测试
 add_test(NAME HashTableTest COMMAND test_hash_table)
+
+# 生成套件目标：由 compile-fix CLI 写入 tests/generated_suite.cpp
+add_executable(generated_suite tests/generated_suite.cpp)
+target_link_libraries(generated_suite hash_table GTest::gtest GTest::gtest_main)
+add_test(NAME GeneratedSuite COMMAND generated_suite)
