@@ -162,36 +162,25 @@ class AdaptiveExecution(ExecutionStrategy):
     def strategy_name(self) -> str:
         return f"adaptive_w{self.current_workers}"
     
-    def execute(self, tasks: List[GenerationTask], 
+    def execute(self, tasks: List[GenerationTask],
                 processor: Callable[[GenerationTask], GenerationResult]) -> List[GenerationResult]:
         """Execute with adaptive worker count based on success rate"""
         logger.info(f"Starting adaptive execution of {len(tasks)} tasks")
-        
+
         if len(tasks) <= 5:
             # For small task sets, use sequential execution
             sequential = SequentialExecution()
             return sequential.execute(tasks, processor)
-        
-        # Split tasks into batches for adaptive processing
-        batch_size = max(3, len(tasks) // 3)
-        batches = [tasks[i:i + batch_size] for i in range(0, len(tasks), batch_size)]
-        
-        all_results = []
-        
-        for i, batch in enumerate(batches):
-            logger.info(f"Processing batch {i+1}/{len(batches)} with {self.current_workers} workers")
-            
-            concurrent = ConcurrentExecution(max_workers=self.current_workers)
-            batch_results = concurrent.execute(batch, processor)
-            
-            all_results.extend(batch_results)
-            
-            # Adapt worker count based on success rate
-            if i < len(batches) - 1:  # Don't adapt after the last batch
-                success_rate = len([r for r in batch_results if r.success]) / len(batch_results)
-                self._adapt_workers(success_rate)
-        
-        return all_results
+
+        # Execute all tasks concurrently with current worker count
+        concurrent = ConcurrentExecution(max_workers=self.current_workers)
+        results = concurrent.execute(tasks, processor)
+
+        # Adapt worker count for next execution
+        success_rate = len([r for r in results if r.success]) / len(results)
+        self._adapt_workers(success_rate)
+
+        return results
     
     def _adapt_workers(self, success_rate: float) -> None:
         """Adapt worker count based on success rate"""

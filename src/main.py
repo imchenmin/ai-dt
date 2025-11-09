@@ -5,6 +5,7 @@ Unified command-line interface for all test generation scenarios
 """
 
 import argparse
+import asyncio
 import logging
 import sys
 from typing import Dict, Any, List, Optional
@@ -17,6 +18,7 @@ from src.test_generation.service import TestGenerationService
 from src.utils.config_manager import config_manager
 from src.utils.logging_utils import get_logger
 from src.api.server import APIServer
+from src.modes.streaming_mode import StreamingModeHandler
 
 # Setup basic logging initially
 logging.basicConfig(level=logging.INFO)
@@ -25,13 +27,14 @@ logger = get_logger(__name__)
 
 class TestGenerationConfig:
     """Load and manage test generation configuration"""
-    
+
     def __init__(self, config_path: str = "config/test_generation.yaml"):
         self.config_path = config_path
         # Reinitialize config manager with custom path if needed
         if config_path != "config/test_generation.yaml":
             global config_manager
             config_manager = config_manager.__class__(config_path)
+        self.config = config_manager.config
     
     def get_project_config(self, project_name: str) -> Dict[str, Any]:
         """Get configuration for a specific project"""
@@ -127,16 +130,18 @@ def main():
     
     # Mode selection
     mode_group = parser.add_mutually_exclusive_group(required=True)
-    mode_group.add_argument("--simple", action="store_true", 
-                          help="Simple mode: specify project directly")
-    mode_group.add_argument("--config", metavar="PROJECT_NAME", 
-                          help="Configuration mode: use project from config file")
+    mode_group.add_argument("--simple", action="store_true",
+                          help="Simple mode: specify project path directly (no config file needed)")
+    mode_group.add_argument("--config", metavar="PROJECT_NAME",
+                          help="Config mode: use predefined project from config file (standard architecture)")
+    mode_group.add_argument("--streaming", metavar="PROJECT_NAME", nargs='?', const=None,
+                          help="Streaming mode: use streaming architecture with project from config file")
     mode_group.add_argument("--list-projects", action="store_true",
-                          help="List available projects from configuration")
+                          help="List all available projects from config file")
     mode_group.add_argument("--single-file", metavar="FILE_PATH",
                           help="Single file mode: analyze only the specified file")
     mode_group.add_argument("--api-server", action="store_true",
-                          help="Start API server mode: expose LLM client as OpenAI-compatible API")
+                          help="API server mode: expose LLM client as OpenAI-compatible API")
     
     # Simple mode arguments
     parser.add_argument("-p", "--project", help="Project root directory (simple mode)")
@@ -149,14 +154,20 @@ def main():
     parser.add_argument("--exclude", nargs='+', 
                       help="Exclude files/folders matching these patterns (simple mode)")
     
-    # Configuration mode arguments
+    # Configuration arguments (for --config and --streaming modes)
     parser.add_argument("--config-file", default="config/test_generation.yaml",
-                      help="Path to configuration file (config mode)")
+                      help="Path to configuration file")
     parser.add_argument("--profile", default="comprehensive",
-                      help="Execution profile (quick, comprehensive, custom)")
+                      help="Execution profile: quick, comprehensive, streaming, or custom")
     parser.add_argument("--prompt-only", action="store_true",
-                        help="Only generate prompts and skip LLM requests.")
-    
+                        help="Only generate prompts and skip LLM requests (no test generation)")
+
+    # Streaming mode specific arguments
+    parser.add_argument("--max-concurrent", type=int, default=3,
+                      help="Maximum concurrent LLM calls (default: 3)")
+    parser.add_argument("--progress", action="store_true",
+                      help="Enable real-time progress reporting")
+      
     # API server arguments
     parser.add_argument("--host", default="0.0.0.0",
                       help="API server host (default: 0.0.0.0)")
@@ -177,7 +188,85 @@ def main():
             for project_name, description in projects.items():
                 print(f"  {project_name}: {description}")
             return True
-        
+
+        elif args.streaming:
+            # Streaming mode
+            project_name = args.streaming
+            if project_name is None:
+                # If no project specified, check for --project argument (backward compatibility)
+                if args.project:
+                    # Run streaming mode with simple project parameters
+                    handler = StreamingModeHandler()
+                    asyncio.run(
+                        handler.run_streaming_mode(
+                            project_path=args.project,
+                            output_dir=args.output,
+                            compile_commands=args.compile_commands,
+                            include_patterns=args.include,
+                            exclude_patterns=args.exclude,
+                            max_concurrent=args.max_concurrent,
+                            enable_progress=args.progress
+                        )
+                    )
+                    return True
+                else:
+                    parser.error("--streaming requires PROJECT_NAME or --project argument")
+
+            # Load configuration
+            config_manager_obj = TestGenerationConfig(args.config_file)
+            project_config = config_manager_obj.get_project_config(project_name)
+
+            # Get profile configuration (default to streaming profile)
+            profile_name = args.profile if args.profile != "comprehensive" else "streaming"
+            try:
+                profile_config = config_manager_obj.get_profile_config(profile_name)
+            except ValueError:
+                # If streaming profile not found, use comprehensive
+                profile_config = config_manager_obj.get_profile_config("comprehensive")
+
+            # Merge configurations
+            merged_config = {**project_config, **profile_config}
+
+            # Extract streaming configuration from config
+            config_manager_obj = TestGenerationConfig(args.config_file)
+            # Access the raw config through the config manager instance
+            streaming_config = config_manager_obj.config.get('streaming', {})
+
+  
+            # Create streaming handler and run
+            handler = StreamingModeHandler()
+
+            # Build config overrides
+            config_overrides = {
+                'llm_provider': merged_config.get('llm_provider', 'deepseek'),
+                'model': merged_config.get('model', 'deepseek-chat'),
+                'max_tokens': merged_config.get('max_tokens', 2500),
+                'temperature': merged_config.get('temperature', 0.3),
+            }
+
+            # Add streaming-specific config
+            if streaming_config:
+                pipeline_config = streaming_config.get('pipeline', {})
+                config_overrides.update({
+                    'max_concurrent_llm_calls': args.max_concurrent or pipeline_config.get('max_concurrent_llm_calls', 3),
+                    'timeout_seconds': pipeline_config.get('timeout_seconds', 300),
+                    'retry_attempts': pipeline_config.get('retry_attempts', 3),
+                })
+
+            asyncio.run(
+                handler.run_streaming_mode(
+                    project_path=project_config['path'],
+                    output_dir=merged_config.get('output_dir', args.output),
+                    compile_commands=project_config.get('comp_db', 'compile_commands.json'),
+                    include_patterns=project_config.get('include_patterns'),
+                    exclude_patterns=project_config.get('exclude_patterns'),
+                    max_concurrent=args.max_concurrent,
+                    enable_progress=args.progress,
+                    **config_overrides
+                )
+            )
+            return True
+
         elif args.config:
             # Configuration mode
             config_manager_obj = TestGenerationConfig(args.config_file)

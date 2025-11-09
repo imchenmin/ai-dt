@@ -209,7 +209,7 @@ class TestGenerationOrchestrator:
 
         # Log token usage statistics
         if successful_results:
-            total_tokens = sum(r.usage.get('total_tokens', 0) for r in successful_results)
+            total_tokens = sum(r.usage.get('total_tokens', 0) if r.usage else 0 for r in successful_results)
             avg_tokens = total_tokens / len(successful_results) if successful_results else 0
             logger.info(f"Token usage: Total={total_tokens}, Average per function={avg_tokens:.0f}")
 

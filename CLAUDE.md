@@ -31,8 +31,15 @@ cp .env.example .env  # Add OPENAI_API_KEY and/or DEEPSEEK_API_KEY
 
 ### Test Generation
 ```bash
-# Simple mode (recommended)
+# Simple mode (quick tests without config)
 python -m src.main --simple --project test_projects/c --output ./experiment/generated_tests
+
+# Config mode (using predefined projects)
+python -m src.main --config complex_c_project
+python -m src.main --config complex_c_project --profile quick
+
+# Streaming mode (high-performance for large projects)
+python -m src.main --streaming complex_c_project --progress --max-concurrent 5
 
 # Selective parsing for large projects
 python -m src.main --simple --project large_project --include "src/module_a/" "src/module_b/"
@@ -40,9 +47,6 @@ python -m src.main --simple --project large_project --exclude "third_party/" "ve
 
 # Single file mode
 python -m src.main --single-file src/module_a/specific_file.c --project large_project
-
-# Configuration mode
-python -m src.main --config simple_c
 
 # List available projects
 python -m src.main --list-projects
@@ -55,11 +59,11 @@ python -m src.main --list-projects
 - `python -m src.main` - Unified test generation interface
 - `python src/main.py` - Alternative execution (requires PYTHONPATH=.)
 
-### Streaming Mode Commands
-
-- `python -m src.main --streaming -p test_projects/c` - Streaming test generation
-- `python -m src.main --streaming -p test_projects/c --progress` - With progress reporting
-- `python -m src.main --streaming -p test_projects/c --max-concurrent 5` - Custom concurrency
+### Mode Selection Guide
+- **Simple mode**: `--simple` - Quick tests without configuration file
+- **Config mode**: `--config` - Use predefined project configs (standard architecture)
+- **Streaming mode**: `--streaming` - High-performance for large projects
+- **Single file mode**: `--single-file` - Focus on specific file only
 
 ### Comparison Mode Commands
 
@@ -194,7 +198,7 @@ selective_project:
 - **Proxy issues**: Clear malformed proxy variables
 - **Python path**: Use `python -m src.main` for consistent execution
 - **libclang setup**: Use unified configuration approach
-- **API timeouts**: Implement batch processing with delays
+- **API timeouts**: Implement rate limiting with delays
 - **Function analysis**: Maintain consistent access patterns
 - **Dify Web认证**: 复制config/sample_dify.curl.example为自定义文件并填入认证信息
 
@@ -235,11 +239,10 @@ streaming:
 ### ✅ Completed Enhancements
 - **Enhanced Logging**: Added timestamp functionality and log saving to experiment directories
 - **MockCpp Guidance**: Enhanced prompt templates with comprehensive MockCpp usage guidance for both C and C++ projects
-- **Batch Processing**: Implemented two-phase processing (prompt generation first, then LLM processing)
+- **Two-Phase Processing**: Implemented prompt generation phase followed by LLM processing phase
 - **Progress Tracking**: Added real-time progress, ETA, and generation statistics
 - **Language-Specific Mocking**: Unified MOCKER method for both C and C++ function mocking
 - **Logging System Refactor**: Replaced all print statements with enhanced logger throughout codebase
-- **Batch Processing Optimization**: Implemented concurrent processing with configurable worker counts and immediate prompt saving
 - **Concurrent Processing**: Support for parallel LLM requests with ThreadPoolExecutor (1, 3, or 5 workers)
 - **Selective Parsing**: Added support for folder/file-specific compilation database parsing to handle large projects efficiently
 - **Streaming Architecture**: Complete implementation of pipeline-based streaming processing for improved performance and scalability
@@ -249,7 +252,7 @@ streaming:
 - **Enhanced Error Handling**: Better retry mechanisms and error recovery for concurrent operations
 - **Circuit Breaker Pattern**: Implement circuit breaker for LLM API rate limiting
 - **Backpressure Control**: Enhanced memory management for large projects
-- **Log Analysis**: Automated log parsing and performance reporting for batch processing
+- **Log Analysis**: Automated log parsing and performance reporting
 - **Template Optimization**: Further refinement of prompt templates based on generation results
 - **Function Filtering UI**: Interactive function selection interface
 - **Test Quality Assessment**: Automated test quality scoring and validation
@@ -258,3 +261,4 @@ streaming:
 
 - 每一次完成整个大的工作量并测试完成后，将工作日志写到 @docs/work_logs/ 中
 - 请记住每次都将你的方案保存到 doc文档中，以当前时间戳和标题命名
+- 用.env默认加载环境变量，而非export DEEPSEEK_API_KEY

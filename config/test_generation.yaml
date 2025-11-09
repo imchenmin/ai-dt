@@ -155,7 +155,6 @@ streaming:
   performance:
     first_result_timeout: 60  # Maximum time to wait for first result
     progress_report_interval: 5  # Report progress every N seconds
-    batch_size: 10  # Process functions in batches
     memory_limit_mb: 1024  # Maximum memory usage limit
 
   # Error handling

@@ -220,7 +220,7 @@ TEST(MathTestSuite, CalculateSumTest) {
         assert len(results) == 0
 
     @pytest.mark.asyncio
-    async def test_batch_result_collection(self):
+    async def test_multiple_result_collection(self):
         """Test collection of multiple results"""
         with tempfile.TemporaryDirectory() as temp_dir:
             collector = MockResultCollector(output_dir=temp_dir)

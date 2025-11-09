@@ -18,7 +18,7 @@ from .interfaces import (
 from src.utils.logging_utils import get_logger
 from src.llm.client import LLMClient
 from src.llm.models import LLMConfig
-from src.test_generation.models import GenerationResult
+from src.test_generation.models import GenerationResult, GenerationTask
 from src.test_generation.components import PromptGenerator
 
 
@@ -170,7 +170,8 @@ class LLMProcessor(StreamProcessor):
                 )
 
                 # Notify observers
-                await self._notify_observers_packet_processed(result_packet, result.processing_time)
+                processing_time = time.time() - start_time
+                await self._notify_observers_packet_processed(result_packet, processing_time)
 
                 self.logger.debug(
                     f"Generated test for: {result.function_name} "
@@ -259,7 +260,9 @@ class LLMProcessor(StreamProcessor):
                 None,
                 self.llm_client.generate_test,
                 prompt,
-                function_data.function_info.get("name", "unknown")
+                2000,  # max_tokens
+                0.3,  # temperature
+                function_data.function_info.get("language", "c")  # language
             )
 
             processing_time = time.time() - start_time
@@ -274,14 +277,25 @@ class LLMProcessor(StreamProcessor):
                 suite_name=f"{function_data.function_info.get('name', 'unknown')}TestSuite"
             )
 
+            # Handle response from generate_test (backward compatible API)
+            if isinstance(llm_response, dict):
+                test_code = llm_response.get('test_code', '')
+                success = llm_response.get('success', False)
+                model = llm_response.get('model', 'unknown')
+            else:
+                test_code = llm_response or ''
+                success = bool(test_code.strip())
+                model = self.llm_client.model if hasattr(self.llm_client, 'model') else "unknown"
+
             # Create generation result
             result = GenerationResult(
                 task=task,
-                success=bool(llm_response and llm_response.strip()),
-                test_code=llm_response or "",
+                success=success,
+                test_code=test_code,
                 prompt=prompt,
-                model=self.llm_client.model if hasattr(self.llm_client, 'model') else "unknown",
-                test_length=len(llm_response) if llm_response else 0,
+                model=model,
+                prompt_length=len(prompt),
+                test_length=len(test_code),
                 file_info={"attempt": attempt, "file_path": function_data.file_path}
             )
 

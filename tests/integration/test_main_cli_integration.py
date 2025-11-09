@@ -62,13 +62,25 @@ class TestMainCLIIntegration:
             "--config", "complex_c_project",
             "--prompt-only"
         ]
-        
+
         with patch('sys.argv', test_args):
             with patch('src.main.logger') as mock_logger:
-                # Mock LLM client to avoid actual API calls
-                with patch('src.test_generation.service.TestGenerationService.generate_tests_with_config') as mock_generate:
-                    # Setup mock return value
-                    mock_generate.return_value = [
+                # Mock the entire TestGenerationService to control both methods
+                with patch('src.main.TestGenerationService') as MockService:
+                    mock_service = Mock()
+                    MockService.return_value = mock_service
+
+                    # Setup mock for analyze_project_functions - return some functions
+                    mock_service.analyze_project_functions.return_value = [
+                        {
+                            'function_name': 'test_function',
+                            'file_path': 'test.c',
+                            'context': 'mock context'
+                        }
+                    ]
+
+                    # Setup mock for generate_tests_with_config
+                    mock_service.generate_tests_with_config.return_value = [
                         {
                             'function_name': 'test_function',
                             'prompt': 'Generated test prompt',
@@ -77,16 +89,22 @@ class TestMainCLIIntegration:
                             'test_code': 'mock test code'
                         }
                     ]
-                    
+
+                    mock_service.print_results.return_value = None
+
                     # Call main function
                     result = main()
-                    
+
                     # Verify successful execution
                     assert result is True
-                    
+
+                    # Verify both methods were called
+                    mock_service.analyze_project_functions.assert_called_once()
+                    mock_service.generate_tests_with_config.assert_called_once()
+                    mock_service.print_results.assert_called_once()
+
                     # Verify generate_tests_with_config was called with prompt_only=True
-                    mock_generate.assert_called_once()
-                    call_args = mock_generate.call_args
+                    call_args = mock_service.generate_tests_with_config.call_args
                     assert call_args[1]['prompt_only'] is True
     
     def test_component_integration_flow(self, project_root):

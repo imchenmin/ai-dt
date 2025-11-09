@@ -230,7 +230,7 @@ streaming:
   performance:
     first_result_timeout: 30      # 30秒内必须产生结果
     progress_report_interval: 3     # 每3秒报告进度
-    batch_size: 20                  # 批处理大小
+    # batch_size removed - using streaming architecture
     memory_limit_mb: 2048          # 2GB内存限制
 
   error_handling:

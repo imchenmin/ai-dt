@@ -196,7 +196,7 @@ class StreamingTestGenerationService:
         """Create LLM client from configuration"""
         try:
             # Get default LLM provider from config
-            llm_provider = self.config_manager.get_default_llm_provider()
+            llm_provider = self.config_manager.config.get('llm_provider', 'deepseek')
             api_key = self.config_manager.get_api_key_for_provider(llm_provider)
 
             if not api_key:
